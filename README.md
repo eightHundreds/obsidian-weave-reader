@@ -1,26 +1,172 @@
+# Weave EPUB Reader
 
+[简体中文](#中文文档) | [繁體中文](./README.zh-TW.md) | [English](#english-documentation) | [Español](./README.es.md) | [Français](./README.fr.md) | [日本語](./README.ja.md) | [한국어](./README.ko.md) | [Русский](./README.ru.md) | [العربية](./README.ar.md)
 
-[中文](#中文文档) | [繁體中文](./README.zh-TW.md) | [English](#english-documentation) | [Español](./README.es.md) | [Français](./README.fr.md) | [日本語](./README.ja.md) | [한국어](./README.ko.md) | [Русский](./README.ru.md) | [العربية](./README.ar.md)
-
-
-
-![weave-series-banner-trinity](https://github.com/user-attachments/assets/8f748341-bb83-4cf9-b020-d8cd18a2aa92)
 
 ![weave-series-banner-og](https://github.com/user-attachments/assets/a52c0875-9296-4dfd-bf94-114a225f2972)
 
+![weave-series-banner-trinity](https://github.com/user-attachments/assets/8f748341-bb83-4cf9-b020-d8cd18a2aa92)
+   
+![QQ_1784327250240](https://github.com/user-attachments/assets/dc88b393-76ec-413c-b226-31ab01a7e82a)
 
-![image](https://github.com/user-attachments/assets/d2180376-243a-4cb0-8392-03b262fc972c)
+![QQ20260718-070731-HD](https://github.com/user-attachments/assets/c1850008-aa57-48e1-b63f-d34a01326a53)
 
-![image](https://github.com/user-attachments/assets/1c23cd98-db63-45e0-be20-204a32f00a90)
+![QQ20260718-064929-HD](https://github.com/user-attachments/assets/5fc7ff83-b8e3-498f-8233-90fbcc94198b)
+
+![QQ_1784328028569](https://github.com/user-attachments/assets/1185b662-3f91-4dee-b552-e53e3ebcb25d)
 
 
-
-![image](https://github.com/user-attachments/assets/1924e4e5-346f-4e0a-88fa-f8a6ccbdbf90)
-
-![image](https://github.com/user-attachments/assets/58a7c42a-f468-4eb9-858e-0179e9e0e3d4)
-
+![QQ_1785812351950](https://github.com/user-attachments/assets/5c33039e-7ca4-461b-b258-972561f9789d)
 
 </div>
+
+---
+
+## English Documentation
+
+### Introduction
+
+**Weave Epub Reader** is a reader plugin in the **Obsidian Weave plugin series**, built fully for Obsidian and available across Obsidian platforms. It freely supports reading EPUB, TXT, FB2/FBZ, MOBI, AZW3, CBZ, PDF, and more, plus multi-style excerpt notes. Excerpts can be stored in **Markdown**, **Canvas**, and **Weave deck** files, with source links for jumping between notes and the book, and data stays fully local.
+
+The essential experience covers daily reading, bookshelf management, excerpt summaries, **book data page templates**, and in-body rendering. Premium support adds **library-wide excerpt timelines**, **two-way tracing**, **paragraph reading / immersive fullscreen**, **vocabulary marking and study**, and more—using tools inside Obsidian to think, sharpen judgment, and make reading count.
+
+> Tip: Questions welcome—email tutaoyuan8@outlook.com
+
+Minimum Obsidian version: **1.8.7**
+
+## Essential experience and Premium support
+
+| Capability | Essential experience | Premium support |
+|------------|:--------------------:|:---------------:|
+| **All platforms** (desktop / mobile) | ✅ | ✅ |
+| Read **EPUB / TXT / FB2 / FBZ / MOBI / AZW3 / CBZ / PDF** | ✅ | ✅ |
+| **My bookshelf**: import, covers, progress, search/filter, reading status | ✅ | ✅ |
+| Bookshelf **multiple views**, **excerpt stats** (excerpts / thoughts / cards) | ✅ | ✅ |
+| **TOC jump**, **dual-page reading**, **single-page continuous scroll**, and other modes | ✅ | ✅ |
+| **Reading typography**: follow Obsidian, **custom body font and size**, publisher styles | ✅ | ✅ |
+| **Reading progress** persistence, bookshelf progress | ✅ | ✅ |
+| **Current-page bookmarks**, bookmark folder, and bookmark list navigation | ✅ | ✅ |
+| **Reading reference points** (record / update / jump) | ✅ | ✅ |
+| **Five highlight colors**, thoughts (`---div---`), excerpts, and **in-body rendering** | ✅ | ✅ |
+| **Underline / strikethrough / wavy underline** styling | ✅ | ✅ |
+| **Auto excerpt** (insert into notes / copy to clipboard) | ✅ | ✅ |
+| **Screenshot excerpts** (can continue across pages) | ✅ | ✅ |
+| Excerpt **card list** (filter, sort, jump to source) | ✅ | ✅ |
+| Excerpt **timeline** (**current book**, browse by day) | ✅ | ✅ |
+| Excerpt **batch select**, export, delete | ✅ | ✅ |
+| **Canvas** binding and automatic node creation | ✅ | ✅ |
+| **Book data page templates** (customize each book's `data_*.md` layout) | ✅ | ✅ |
+| **Excerpt export templates** and built-in presets | ✅ | ✅ |
+| Export **current chapter body** to Markdown | ✅ | ✅ |
+| **Public API** (current chapter / TOC section body, chapter or whole-book excerpt notes, etc.) | ✅ | ✅ |
+| Multilingual UI (Simplified Chinese, Traditional Chinese, English, Japanese, Korean, Russian, German, Spanish, Arabic) and in-app **tutorial** | ✅ | ✅ |
+| **Library-wide excerpt timeline** (cross-book daily review, jump to source) | 🔒 | ✅ |
+| TOC sidebar **book map density bar** | 🔒 | ✅ |
+| TOC **chapter marks** (important / question / mastered, etc.) | 🔒 | ✅ |
+| Bookshelf **playlists** (including set as home) | 🔒 | ✅ |
+| **Two-way tracing** (anchor jumps, notes ↔ book location display) | 🔒 | ✅ |
+| **Reading background glow** | 🔒 | ✅ |
+| **Paragraph reading mode**, immersive fullscreen | 🔒 | ✅ |
+| **Vocabulary marking** (in-text marks, double-click lookup, add to Weave vocabulary) | 🔒 | ✅ |
+| **Advanced Markdown export** (whole-book / chapter excerpt notes, chapters with excerpt marks) | 🔒 | ✅ |
+| Footnote hover preview | 🔒 | ✅ |
+
+> Legend: ✅ included · 🔒 requires Premium support
+
+- **Enable Premium support**: Use an EPUB-only activation code in reader settings; if an activated **Weave** main plugin is installed, authorization can be inherited without re-entering a code.
+- **Card making / incremental reading / AI**: Do not consume a separate reader Premium-support license, but require Weave; AI also needs your own API key.
+
+Activate in reader settings. Terms: [PREMIUM_TERMS.md](./PREMIUM_TERMS.md).
+
+## Installation
+
+### Option 1: Community plugins (recommended)
+
+1. Open **Settings → Community plugins → Browse**
+2. Search for **Weave EPUB Reader**, install, and enable
+
+### Option 2: Manual installation
+
+1. Download a [GitHub release](https://github.com/zhuzhige123/obsidian-weave-reader/releases) matching the version in `manifest.json`:
+   - `main.js`
+   - `manifest.json`
+   - `styles.css`
+2. Copy into `.obsidian/plugins/weave-epub-reader/`
+3. Restart Obsidian and enable **Weave EPUB Reader** under **Settings → Community plugins**
+
+## Quick start
+
+1. After enabling the plugin, open the **bookshelf** from the ribbon or command palette, then import or open a book from your vault.
+2. Create or open a Markdown file and place the cursor where excerpts should go; turn on **Auto excerpt** in the reader. Select text to create highlights, excerpts, or bookmarks—they are inserted at that cursor.
+3. Click a highlight in the book to jump to its source note from the toolbar; in the Markdown / Canvas that holds the excerpt, click the book icon next to it to return to the matching passage.
+4. Reader menu → **Help** → **Tutorial** for the in-app short guide; FAQ item 1 covers the excerpt workflow in more detail.
+
+## Data and sync
+
+**Good to sync (in the vault)**: Book files, Markdown excerpts, Canvas files, Weave deck data, and per-book progress/bookmark notes (default `Weave EPUB Reader/data_*.md`).
+
+**Usually local (plugin folder)**: Reader cache, indexes, Canvas bindings, reference reading points, and similar local state. Prefer syncing vault content across devices rather than `.obsidian/plugins/weave-epub-reader/` cache files.
+
+## Privacy and network
+
+- Reading, rendering, excerpting, and backlinks are **local by default**; vault content is not uploaded proactively.
+- Bookshelf, backlink, and source-locate features enumerate vault file paths locally; copying excerpts or activation codes uses the clipboard. See [PRIVACY.md](./PRIVACY.md).
+- **Premium support activation** may contact the license service (activation code, email, device fingerprint summary, etc.). See [PRIVACY.md](./PRIVACY.md).
+- If you use the AI menu through the **Weave** main plugin, it calls the third-party services you configure; **the reader itself does not provide AI features** (see FAQ item 3).
+
+## FAQ
+
+### 1. How do I capture reading excerpts correctly?
+
+Excerpts are stored at concrete locations in the Markdown, Canvas, or Weave deck files you choose. The reader aggregates source links from those captures and renders highlights in the book. Selections that are not saved this way only flash briefly and leave no durable data. The in-reader tutorial banner explains this in more detail.
+
+### 2. How does this relate to Weave?
+
+**Weave EPUB Reader works on its own**: without the [Weave](https://github.com/zhuzhige123/anki-obsidian-plugin) main plugin, you can still read EPUBs, use the bookshelf, and capture excerpts with in-body rendering. With Weave installed, you can also connect spaced-repetition cards, incremental reading calendar, AI actions, and inherit Weave licensing for Premium support. The two are **optional companions**, not a hard dependency.
+
+### 3. Does the reader integrate AI?
+
+At this stage, we do not plan to integrate AI into the reader plugin. The vision is to give you a clean, immersive reading environment in Obsidian, with smooth natural interaction and comfortable text editing. We do not intend to use AI for auto-parsing, summarization, or conversational assisted reading. In most cases, that would disrupt your reading rhythm, scatter your focus, and get in the way of deep thinking while you read.
+
+If you need AI, you can copy content, export the current chapter as an MD file, or use the plugin **API** to fetch chapter text and excerpt notes, then combine with other AI-capable plugins for whatever automated workflows you want. The API exists for exactly that purpose.
+
+### 4. Can excerpts and notes sync across platforms?
+
+**Yes.** Captures live in Markdown, Canvas, deck files, and other vault content, so they follow whatever Obsidian sync you already use (Obsidian Sync, iCloud, cloud-synced vaults, etc.) across desktop and mobile. Sync vault content; reader cache under the plugin folder usually does not need cross-device sync (see [Data and sync](#data-and-sync) above).
+
+### 5. Can I export my notes?
+
+**Yes.** Excerpt and highlight data stays in your vault—you can read, edit, and export Markdown in Obsidian, and the reader offers chapter export and related tools. **Data is local by default**; your vault is not uploaded proactively.
+
+### 6. Why is Premium support paid?
+
+Premium support **funds ongoing development** so the reader and excerpt workflow can keep improving. The **essential experience is free**—daily reading, five highlight colors, thoughts, excerpts, and in-body rendering are fully usable without paying. Enable Premium support only when you want the library-wide excerpt timeline, two-way tracing, paragraph reading mode, and other advanced capabilities.
+
+### 7. Subscription or one-time purchase?
+
+Premium support is **buy-once** (activate once, use long-term; see [Premium support terms](./PREMIUM_TERMS.md)), not a monthly subscription.
+
+### 8. How do I change font and size?
+
+By default the reader **follows Obsidian's text font and size**. Open **Typography** in the reader menu and enable **Custom body font and size** to choose a preset font and adjust size (as a percentage of Obsidian's baseline). When **Use publisher styles** is on, the book's original fonts apply.
+
+### 9. How do I change the background color?
+
+The reader background **follows the active Obsidian theme**. Install and switch themes; the plugin does not set a background of its own.
+
+## More documentation
+
+- [Introduction (Simplified Chinese)](#中文文档)
+- [Introduction (Traditional Chinese)](./README.zh-TW.md)
+- [Español](./README.es.md) · [Français](./README.fr.md) · [العربية](./README.ar.md)
+- [Privacy](./PRIVACY.md) · [Premium support terms](./PREMIUM_TERMS.md) · [Support](./SUPPORT.md) · [Security](./SECURITY.md)
+
+## License and author
+
+Source code is released under [GPL-3.0-or-later](LICENSE).
+
+- Author: Rabbit (zhuzhige)
+- GitHub: https://github.com/zhuzhige123
 
 ---
 
@@ -167,154 +313,6 @@
 ## 许可证与作者
 
 源码基于 [GPL-3.0-or-later](LICENSE) 发布。
-
-- Author: Rabbit (zhuzhige)
-- GitHub: https://github.com/zhuzhige123
-
----
-
-## English Documentation
-
-### Introduction
-
-**Weave Epub Reader** is a reader plugin in the **Obsidian Weave plugin series**, built fully for Obsidian and available across Obsidian platforms. It freely supports reading EPUB, TXT, FB2/FBZ, MOBI, AZW3, CBZ, PDF, and more, plus multi-style excerpt notes. Excerpts can be stored in **Markdown**, **Canvas**, and **Weave deck** files, with source links for jumping between notes and the book, and data stays fully local.
-
-The essential experience covers daily reading, bookshelf management, excerpt summaries, **book data page templates**, and in-body rendering. Premium support adds **library-wide excerpt timelines**, **two-way tracing**, **paragraph reading / immersive fullscreen**, **vocabulary marking and study**, and more—using tools inside Obsidian to think, sharpen judgment, and make reading count.
-
-> Tip: Questions welcome—email tutaoyuan8@outlook.com
-
-Minimum Obsidian version: **1.8.7**
-
-## Essential experience and Premium support
-
-| Capability | Essential experience | Premium support |
-|------------|:--------------------:|:---------------:|
-| **All platforms** (desktop / mobile) | ✅ | ✅ |
-| Read **EPUB / TXT / FB2 / FBZ / MOBI / AZW3 / CBZ / PDF** | ✅ | ✅ |
-| **My bookshelf**: import, covers, progress, search/filter, reading status | ✅ | ✅ |
-| Bookshelf **multiple views**, **excerpt stats** (excerpts / thoughts / cards) | ✅ | ✅ |
-| **TOC jump**, **dual-page reading**, **single-page continuous scroll**, and other modes | ✅ | ✅ |
-| **Reading typography**: follow Obsidian, **custom body font and size**, publisher styles | ✅ | ✅ |
-| **Reading progress** persistence, bookshelf progress | ✅ | ✅ |
-| **Current-page bookmarks**, bookmark folder, and bookmark list navigation | ✅ | ✅ |
-| **Reading reference points** (record / update / jump) | ✅ | ✅ |
-| **Five highlight colors**, thoughts (`---div---`), excerpts, and **in-body rendering** | ✅ | ✅ |
-| **Underline / strikethrough / wavy underline** styling | ✅ | ✅ |
-| **Auto excerpt** (insert into notes / copy to clipboard) | ✅ | ✅ |
-| **Screenshot excerpts** (can continue across pages) | ✅ | ✅ |
-| Excerpt **card list** (filter, sort, jump to source) | ✅ | ✅ |
-| Excerpt **timeline** (**current book**, browse by day) | ✅ | ✅ |
-| Excerpt **batch select**, export, delete | ✅ | ✅ |
-| **Canvas** binding and automatic node creation | ✅ | ✅ |
-| **Book data page templates** (customize each book's `data_*.md` layout) | ✅ | ✅ |
-| **Excerpt export templates** and built-in presets | ✅ | ✅ |
-| Export **current chapter body** to Markdown | ✅ | ✅ |
-| **Public API** (current chapter / TOC section body, chapter or whole-book excerpt notes, etc.) | ✅ | ✅ |
-| Multilingual UI (Simplified Chinese, Traditional Chinese, English, Japanese, Korean, Russian, German, Spanish, Arabic) and in-app **tutorial** | ✅ | ✅ |
-| **Library-wide excerpt timeline** (cross-book daily review, jump to source) | 🔒 | ✅ |
-| TOC sidebar **book map density bar** | 🔒 | ✅ |
-| TOC **chapter marks** (important / question / mastered, etc.) | 🔒 | ✅ |
-| Bookshelf **playlists** (including set as home) | 🔒 | ✅ |
-| **Two-way tracing** (anchor jumps, notes ↔ book location display) | 🔒 | ✅ |
-| **Reading background glow** | 🔒 | ✅ |
-| **Paragraph reading mode**, immersive fullscreen | 🔒 | ✅ |
-| **Vocabulary marking** (in-text marks, double-click lookup, add to Weave vocabulary) | 🔒 | ✅ |
-| **Advanced Markdown export** (whole-book / chapter excerpt notes, chapters with excerpt marks) | 🔒 | ✅ |
-| Footnote hover preview | 🔒 | ✅ |
-
-> Legend: ✅ included · 🔒 requires Premium support
-
-- **Enable Premium support**: Use an EPUB-only activation code in reader settings; if an activated **Weave** main plugin is installed, authorization can be inherited without re-entering a code.
-- **Card making / incremental reading / AI**: Do not consume a separate reader Premium-support license, but require Weave; AI also needs your own API key.
-
-Activate in reader settings. Terms: [PREMIUM_TERMS.md](./PREMIUM_TERMS.md).
-
-## Installation
-
-### Option 1: Community plugins (recommended)
-
-1. Open **Settings → Community plugins → Browse**
-2. Search for **Weave EPUB Reader**, install, and enable
-
-### Option 2: Manual installation
-
-1. Download a [GitHub release](https://github.com/zhuzhige123/obsidian-weave-reader/releases) matching the version in `manifest.json`:
-   - `main.js`
-   - `manifest.json`
-   - `styles.css`
-2. Copy into `.obsidian/plugins/weave-epub-reader/`
-3. Restart Obsidian and enable **Weave EPUB Reader** under **Settings → Community plugins**
-
-## Quick start
-
-1. After enabling the plugin, open the **bookshelf** from the ribbon or command palette, then import or open a book from your vault.
-2. Create or open a Markdown file and place the cursor where excerpts should go; turn on **Auto excerpt** in the reader. Select text to create highlights, excerpts, or bookmarks—they are inserted at that cursor.
-3. Click a highlight in the book to jump to its source note from the toolbar; in the Markdown / Canvas that holds the excerpt, click the book icon next to it to return to the matching passage.
-4. Reader menu → **Help** → **Tutorial** for the in-app short guide; FAQ item 1 covers the excerpt workflow in more detail.
-
-## Data and sync
-
-**Good to sync (in the vault)**: Book files, Markdown excerpts, Canvas files, Weave deck data, and per-book progress/bookmark notes (default `Weave EPUB Reader/data_*.md`).
-
-**Usually local (plugin folder)**: Reader cache, indexes, Canvas bindings, reference reading points, and similar local state. Prefer syncing vault content across devices rather than `.obsidian/plugins/weave-epub-reader/` cache files.
-
-## Privacy and network
-
-- Reading, rendering, excerpting, and backlinks are **local by default**; vault content is not uploaded proactively.
-- Bookshelf, backlink, and source-locate features enumerate vault file paths locally; copying excerpts or activation codes uses the clipboard. See [PRIVACY.md](./PRIVACY.md).
-- **Premium support activation** may contact the license service (activation code, email, device fingerprint summary, etc.). See [PRIVACY.md](./PRIVACY.md).
-- If you use the AI menu through the **Weave** main plugin, it calls the third-party services you configure; **the reader itself does not provide AI features** (see FAQ item 3).
-
-## FAQ
-
-### 1. How do I capture reading excerpts correctly?
-
-Excerpts are stored at concrete locations in the Markdown, Canvas, or Weave deck files you choose. The reader aggregates source links from those captures and renders highlights in the book. Selections that are not saved this way only flash briefly and leave no durable data. The in-reader tutorial banner explains this in more detail.
-
-### 2. How does this relate to Weave?
-
-**Weave EPUB Reader works on its own**: without the [Weave](https://github.com/zhuzhige123/anki-obsidian-plugin) main plugin, you can still read EPUBs, use the bookshelf, and capture excerpts with in-body rendering. With Weave installed, you can also connect spaced-repetition cards, incremental reading calendar, AI actions, and inherit Weave licensing for Premium support. The two are **optional companions**, not a hard dependency.
-
-### 3. Does the reader integrate AI?
-
-At this stage, we do not plan to integrate AI into the reader plugin. The vision is to give you a clean, immersive reading environment in Obsidian, with smooth natural interaction and comfortable text editing. We do not intend to use AI for auto-parsing, summarization, or conversational assisted reading. In most cases, that would disrupt your reading rhythm, scatter your focus, and get in the way of deep thinking while you read.
-
-If you need AI, you can copy content, export the current chapter as an MD file, or use the plugin **API** to fetch chapter text and excerpt notes, then combine with other AI-capable plugins for whatever automated workflows you want. The API exists for exactly that purpose.
-
-### 4. Can excerpts and notes sync across platforms?
-
-**Yes.** Captures live in Markdown, Canvas, deck files, and other vault content, so they follow whatever Obsidian sync you already use (Obsidian Sync, iCloud, cloud-synced vaults, etc.) across desktop and mobile. Sync vault content; reader cache under the plugin folder usually does not need cross-device sync (see [Data and sync](#data-and-sync) above).
-
-### 5. Can I export my notes?
-
-**Yes.** Excerpt and highlight data stays in your vault—you can read, edit, and export Markdown in Obsidian, and the reader offers chapter export and related tools. **Data is local by default**; your vault is not uploaded proactively.
-
-### 6. Why is Premium support paid?
-
-Premium support **funds ongoing development** so the reader and excerpt workflow can keep improving. The **essential experience is free**—daily reading, five highlight colors, thoughts, excerpts, and in-body rendering are fully usable without paying. Enable Premium support only when you want the library-wide excerpt timeline, two-way tracing, paragraph reading mode, and other advanced capabilities.
-
-### 7. Subscription or one-time purchase?
-
-Premium support is **buy-once** (activate once, use long-term; see [Premium support terms](./PREMIUM_TERMS.md)), not a monthly subscription.
-
-### 8. How do I change font and size?
-
-By default the reader **follows Obsidian's text font and size**. Open **Typography** in the reader menu and enable **Custom body font and size** to choose a preset font and adjust size (as a percentage of Obsidian's baseline). When **Use publisher styles** is on, the book's original fonts apply.
-
-### 9. How do I change the background color?
-
-The reader background **follows the active Obsidian theme**. Install and switch themes; the plugin does not set a background of its own.
-
-## More documentation
-
-- [Introduction (Simplified Chinese)](#中文文档)
-- [Introduction (Traditional Chinese)](./README.zh-TW.md)
-- [Español](./README.es.md) · [Français](./README.fr.md) · [العربية](./README.ar.md)
-- [Privacy](./PRIVACY.md) · [Premium support terms](./PREMIUM_TERMS.md) · [Support](./SUPPORT.md) · [Security](./SECURITY.md)
-
-## License and author
-
-Source code is released under [GPL-3.0-or-later](LICENSE).
 
 - Author: Rabbit (zhuzhige)
 - GitHub: https://github.com/zhuzhige123
