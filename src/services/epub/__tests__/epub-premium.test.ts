@@ -14,9 +14,9 @@ describe("epub-premium book format access", () => {
 		expect(canOpenEpubFile(new App(), "Books/novel.txt")).toBe(true);
 	});
 
-	it("blocks other supported formats until licensed", () => {
-		expect(canOpenBookWithCurrentLicense("Books/demo.mobi")).toBe(false);
-		expect(canOpenEpubFile(new App(), "Books/demo.cbz")).toBe(false);
+	it("opens other supported formats because premium access stays unlocked", () => {
+		expect(canOpenBookWithCurrentLicense("Books/demo.mobi")).toBe(true);
+		expect(canOpenEpubFile(new App(), "Books/demo.cbz")).toBe(true);
 	});
 
 	it("opens premium formats when non-epub formats feature is licensed", () => {

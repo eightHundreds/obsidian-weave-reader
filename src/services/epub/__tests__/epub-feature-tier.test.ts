@@ -36,13 +36,13 @@ describe("PremiumFeatureGuard epub tier", () => {
 		expect(guard.isPremiumFeature(EPUB_FEATURE_IDS.READING_PROGRESS)).toBe(false);
 	});
 
-	it("blocks reading reference until licensed or previewed in UI", () => {
+	it("allows reading reference because premium access stays unlocked", () => {
 		const guard = PremiumFeatureGuard.getInstance();
-		expect(guard.canUseFeature(PREMIUM_FEATURES.EPUB_READING_REFERENCE)).toBe(false);
+		expect(guard.canUseFeature(PREMIUM_FEATURES.EPUB_READING_REFERENCE)).toBe(true);
 		expect(guard.shouldShowFeatureEntry(PREMIUM_FEATURES.EPUB_READING_REFERENCE)).toBe(false);
 
 		guard.premiumFeaturesPreviewEnabled.set(true);
 		expect(guard.shouldShowFeatureEntry(PREMIUM_FEATURES.EPUB_READING_REFERENCE)).toBe(true);
-		expect(guard.canUseFeature(PREMIUM_FEATURES.EPUB_READING_REFERENCE)).toBe(false);
+		expect(guard.canUseFeature(PREMIUM_FEATURES.EPUB_READING_REFERENCE)).toBe(true);
 	});
 });
