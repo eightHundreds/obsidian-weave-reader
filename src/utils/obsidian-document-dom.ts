@@ -17,11 +17,12 @@ type NativeDomCreator = {
 };
 
 function nativeDomCreator(doc: Document): NativeDomCreator {
-	const createElement = doc.createElement.bind(doc);
-	const createDocumentFragment = doc.createDocumentFragment.bind(doc);
+	// Foliate chapter documents are not the Obsidian app document. Calling through
+	// a local factory type keeps the native DOM method without Obsidian's createEl.
+	const dom = doc as unknown as NativeDomCreator;
 	return {
-		createElement: (tagName: string) => createElement(tagName),
-		createDocumentFragment,
+		createElement: (tagName: string) => dom.createElement(tagName),
+		createDocumentFragment: () => dom.createDocumentFragment(),
 	};
 }
 
