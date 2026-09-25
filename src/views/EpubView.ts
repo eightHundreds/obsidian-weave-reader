@@ -103,7 +103,6 @@ export class EpubView extends ItemView {
 	private tutorialBtn: HTMLElement | null = null;
 	private inlineTutorialBtn: HTMLButtonElement | null = null;
 	private bookmarkBtn: HTMLElement | null = null;
-	private readingPositionAutoSaveEnabled = false;
 	private toolbarHandlersReady = false;
 	private readerKeymapHandlers: KeymapEventHandler[] = [];
 	private actionHandlers: {
@@ -130,8 +129,6 @@ export class EpubView extends ItemView {
 		showPremiumFeaturePreview?: (featureId: string) => void;
 		saveReadingReferencePoint?: () => Promise<void>;
 		openReadingPositionMenu?: (event: MouseEvent | KeyboardEvent) => void;
-		getReadingPositionAutoSaveEnabled?: () => boolean;
-		setReadingPositionAutoSaveEnabled?: (enabled: boolean) => Promise<boolean>;
 		bindCanvasPath?: (canvasPath: string) => void;
 		unbindCanvas?: () => void;
 		getCanvasService?: () => EpubCanvasService;
@@ -156,10 +153,6 @@ export class EpubView extends ItemView {
 
 	private getCanvasDirectionLabel(direction: CanvasLayoutDirection): string {
 		return this.t(`views.epubView.direction.${direction}`);
-	}
-
-	private canUseReadingProgress(): boolean {
-		return Boolean(this.actionHandlers.canUseReadingProgress?.());
 	}
 
 	private canUseReadingReference(): boolean {
@@ -1610,9 +1603,6 @@ export class EpubView extends ItemView {
 				this.hasReadingReferencePoint = Boolean(point);
 				this.updateReadingReferencePointBtn();
 			},
-			onReadingPositionAutoSaveChange: () => {
-				this.updateReadingReferencePointBtn();
-			},
 			onPremiumUiStateChange: () => {
 				this.refreshAllActionButtons();
 			},
@@ -1702,7 +1692,6 @@ export class EpubView extends ItemView {
 		this.inlineReadingReferenceBtn = null;
 		this.inlineTutorialBtn = null;
 		this.readingReferenceBtn = null;
-		this.readingPositionAutoSaveEnabled = false;
 		this.hasReadingReferencePoint = false;
 		this.clearHeaderActionRefs();
 		if (this.filePath) {
@@ -2051,33 +2040,10 @@ export class EpubView extends ItemView {
 		});
 	}
 
-	private getReadingPositionAutoSaveStateLabel(): string {
-		return this.readingPositionAutoSaveEnabled
-			? this.t("views.epubView.label.readingPositionAutoSaveOn")
-			: this.t("views.epubView.label.readingPositionAutoSaveOff");
-	}
-
 	private getReadingPositionActionLabel(): string {
-		if (!this.canUseReadingReference()) {
-			return this.getReadingPositionAutoSaveStateLabel();
-		}
-		return this.hasReadingReferencePoint
+		return this.canUseReadingReference() && this.hasReadingReferencePoint
 			? this.t("views.epubView.label.readingPositionRecorded")
 			: this.t("views.epubView.label.readingPosition");
-	}
-
-	private getReadingPositionActionTooltip(): string {
-		const autoSave = this.getReadingPositionAutoSaveStateLabel();
-		if (!this.canUseReadingReference()) {
-			return this.t("views.epubView.label.readingPositionTooltip", { autoSave });
-		}
-		if (this.hasReadingReferencePoint) {
-			return this.t("views.epubView.label.readingPositionTooltipRecorded", {
-				title: this.t("views.epubView.label.readingPositionRecorded"),
-				autoSave,
-			});
-		}
-		return this.t("views.epubView.label.readingPositionTooltip", { autoSave });
 	}
 
 	private openReadingPositionMenu(evt: MouseEvent | Event): void {
@@ -2089,14 +2055,9 @@ export class EpubView extends ItemView {
 	}
 
 	private updateReadingReferencePointBtn(): void {
-		if (this.actionHandlers.getReadingPositionAutoSaveEnabled) {
-			this.readingPositionAutoSaveEnabled = this.actionHandlers.getReadingPositionAutoSaveEnabled();
-		}
-		const label = this.getReadingPositionActionTooltip();
-		const shortLabel = this.getReadingPositionActionLabel();
+		const label = this.getReadingPositionActionLabel();
 		const visible =
-			this.canUseReadingProgress()
-			|| this.canUseReadingReference()
+			this.canUseReadingReference()
 			|| this.shouldShowToolbarFeature(PREMIUM_FEATURES.EPUB_READING_REFERENCE);
 		const active = this.canUseReadingReference() ? this.hasReadingReferencePoint : false;
 		this.applyActionButtonState(this.readingReferenceBtn, {
@@ -2105,18 +2066,12 @@ export class EpubView extends ItemView {
 			active,
 			visible,
 		});
-		if (this.readingReferenceBtn) {
-			this.readingReferenceBtn.setAttribute("aria-label", shortLabel);
-		}
 		this.applyActionButtonState(this.inlineReadingReferenceBtn, {
 			icon: "flag",
 			label,
 			active,
 			visible,
 		});
-		if (this.inlineReadingReferenceBtn) {
-			this.inlineReadingReferenceBtn.setAttribute("aria-label", shortLabel);
-		}
 	}
 
 	private updateCanvasBtn(): void {

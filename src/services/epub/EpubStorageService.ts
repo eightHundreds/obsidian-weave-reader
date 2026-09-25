@@ -4238,15 +4238,20 @@ export class EpubStorageService {
 
 	async getCanvasBinding(bookId: string): Promise<string | null> {
 		bookId = await this.resolveCanonicalBookId(bookId);
-		const bindings = await this.loadCanvasBindings();
-		return bindings[bookId] || null;
+		const book = await this.getBook(bookId);
+		if (!book) {
+			return null;
+		}
+		return await this.getBookmarkService().readCanvasBinding(book);
 	}
 
 	async setCanvasBinding(bookId: string, canvasPath: string): Promise<void> {
 		bookId = await this.resolveCanonicalBookId(bookId);
-		const bindings = await this.loadCanvasBindings();
-		bindings[bookId] = canvasPath;
-		await this.saveCanvasBindings(bindings);
+		const book = await this.getBook(bookId);
+		if (!book) {
+			return;
+		}
+		await this.getBookmarkService().writeCanvasBinding(book, canvasPath);
 	}
 
 	async updateCanvasBindingReferences(oldPath: string, newPath: string): Promise<number> {
@@ -4256,27 +4261,11 @@ export class EpubStorageService {
 			return 0;
 		}
 
-		const bindings = await this.loadCanvasBindings();
-		let updated = 0;
-		let changed = false;
-
-		for (const [bookId, canvasPath] of Object.entries(bindings)) {
-			const remapped = this.remapPath(canvasPath, normalizedOldPath, normalizedNewPath);
-			if (!remapped || remapped === canvasPath) {
-				continue;
-			}
-
-			bindings[bookId] = remapped;
-			updated += 1;
-			changed = true;
-		}
-
-		if (changed) {
-			await this.saveCanvasBindings(bindings);
-		}
-
+		const updated = await this.getBookmarkService().remapCanvasBindingPaths(
+			normalizedOldPath,
+			normalizedNewPath
+		);
 		await this.remapCanvasExcerptAnchorPath(normalizedOldPath, normalizedNewPath);
-
 		return updated;
 	}
 
@@ -4342,12 +4331,11 @@ export class EpubStorageService {
 
 	async removeCanvasBinding(bookId: string): Promise<void> {
 		bookId = await this.resolveCanonicalBookId(bookId);
-		const bindings = await this.loadCanvasBindings();
-		if (!Object.prototype.hasOwnProperty.call(bindings, bookId)) {
+		const book = await this.getBook(bookId);
+		if (!book) {
 			return;
 		}
-		delete bindings[bookId];
-		await this.saveCanvasBindings(bindings);
+		await this.getBookmarkService().writeCanvasBinding(book, null);
 	}
 
 	async loadPluginUiMemory(): Promise<EpubPluginUiMemory> {

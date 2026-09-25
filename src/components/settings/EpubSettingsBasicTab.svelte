@@ -1,10 +1,5 @@
 <script lang="ts">
-  import type { TextComponent } from "obsidian";
   import { onMount, untrack } from "svelte";
-  import {
-    normalizeContinuousReadingPositionAutoSaveEnabled,
-    normalizeContinuousReadingPositionAutoSavePages,
-  } from "../../config/reading-position-auto-save";
   import { normalizeSelectionTranslationSettings } from "../../config/selection-translation-settings";
   import { EPUB_RUNTIME, normalizeEpubBookmarkFolderPath } from "../../services/epub";
   import type { CustomWebTranslationProvider } from "../../config/selection-translation-settings";
@@ -33,9 +28,7 @@
   let bookNotesExportTemplateFolderValue = $state("");
   let bookNotesExportDefaultTemplatePath = $state("");
   let excerptFolderSettingsLoaded = $state(false);
-  let continuousReadingPositionAutoSavePagesInput = $state("");
   let customTranslationProviderDrafts = $state<CustomWebTranslationProvider[]>([]);
-  let autoSavePagesTextControl = $state<TextComponent | null>(null);
 
   async function save(): Promise<void> {
     await plugin.saveSettings();
@@ -55,20 +48,6 @@
   let sourceNavigationOpenInNewTab = $derived.by(() => {
     stateVersion;
     return plugin.settings?.sourceNavigationOpenInNewTab !== false;
-  });
-
-  let continuousReadingPositionAutoSaveEnabled = $derived.by(() => {
-    stateVersion;
-    return normalizeContinuousReadingPositionAutoSaveEnabled(
-      plugin.settings?.continuousReadingPositionAutoSaveEnabled
-    );
-  });
-
-  let continuousReadingPositionAutoSavePages = $derived.by(() => {
-    stateVersion;
-    return normalizeContinuousReadingPositionAutoSavePages(
-      plugin.settings?.continuousReadingPositionAutoSavePages
-    );
   });
 
   let premiumPreviewEnabled = $derived.by(() => {
@@ -106,14 +85,11 @@
     getBookmarkFolderValue: () => bookmarkFolderValue,
     getInterfaceLanguageValue: () => interfaceLanguageValue,
     getPremiumPreviewEnabled: () => premiumPreviewEnabled,
-    getContinuousReadingPositionAutoSaveEnabled: () => continuousReadingPositionAutoSaveEnabled,
-    getContinuousReadingPositionAutoSavePages: () => continuousReadingPositionAutoSavePages,
     getSourceNavigationOpenInNewTab: () => sourceNavigationOpenInNewTab,
     getDebugModeEnabled: () => debugModeEnabled,
     getBookNotesExportTemplateFolderValue: () => bookNotesExportTemplateFolderValue,
     getBookNotesExportDefaultTemplatePath: () => bookNotesExportDefaultTemplatePath,
     getCustomTranslationProviderDrafts: () => customTranslationProviderDrafts,
-    getAutoSavePagesTextControl: () => autoSavePagesTextControl,
     setBookmarkFolderInput: (value) => {
       bookmarkFolderInput = value;
     },
@@ -126,9 +102,6 @@
     setBookNotesExportDefaultTemplatePath: (value) => {
       bookNotesExportDefaultTemplatePath = value;
     },
-    setContinuousReadingPositionAutoSavePagesInput: (value) => {
-      continuousReadingPositionAutoSavePagesInput = value;
-    },
     setExcerptSettingsVersion: (updater) => {
       excerptSettingsVersion = updater(excerptSettingsVersion);
     },
@@ -138,11 +111,6 @@
   $effect(() => {
     bookmarkFolderValue;
     bookmarkFolderInput = bookmarkFolderValue;
-  });
-
-  $effect(() => {
-    continuousReadingPositionAutoSavePages;
-    continuousReadingPositionAutoSavePagesInput = String(continuousReadingPositionAutoSavePages);
   });
 
   $effect(() => {
@@ -213,9 +181,6 @@
           bookNotesExportTemplateFolderValue,
           bookNotesExportTemplateFolderInput,
           bookNotesExportDefaultTemplatePath,
-          continuousReadingPositionAutoSaveEnabled,
-          continuousReadingPositionAutoSavePages,
-          continuousReadingPositionAutoSavePagesInput,
           sourceNavigationOpenInNewTab,
           debugModeEnabled,
           selectionTranslationSettings,
@@ -229,22 +194,12 @@
           setBookNotesExportTemplateFolderInput: (value) => {
             bookNotesExportTemplateFolderInput = value;
           },
-          setContinuousReadingPositionAutoSavePagesInput: (value) => {
-            continuousReadingPositionAutoSavePagesInput = value;
-          },
-          setAutoSavePagesTextControl: (control) => {
-            autoSavePagesTextControl = control;
-          },
           updateBookmarkFolder: actions.updateBookmarkFolder,
           updateInterfaceLanguage: actions.updateInterfaceLanguage,
           updatePremiumPreview: actions.updatePremiumPreview,
           updateBookNotesExportTemplatePath: actions.updateBookNotesExportTemplatePath,
           updateBookNotesExportTemplateFolder: actions.updateBookNotesExportTemplateFolder,
           openBookNotesExportTemplateModal: actions.openBookNotesExportTemplateModal,
-          updateContinuousReadingPositionAutoSaveEnabled:
-            actions.updateContinuousReadingPositionAutoSaveEnabled,
-          updateContinuousReadingPositionAutoSavePages:
-            actions.updateContinuousReadingPositionAutoSavePages,
           setBuiltinTranslationProviderEnabled: actions.setBuiltinTranslationProviderEnabled,
           updateCustomTranslationProvider: actions.updateCustomTranslationProvider,
           updateCustomTranslationProviderDraft,

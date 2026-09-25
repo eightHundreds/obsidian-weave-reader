@@ -16,7 +16,7 @@ import type { ReadingStats } from "./types";
 import { unknownPlainText } from "../../utils/unknown-plain-text";
 
 export const EPUB_BOOKMARK_PAGE_MAINTENANCE_NOTE =
-	"> 📎 本页由 Weave EPUB 自动维护。YAML 中 `readingState`、`bookmarks` 请勿手改；`user` 与「我的标注」可自由编辑。";
+	"> 📎 本页由 Weave EPUB 自动维护。YAML 中 `readingState`、`bookmarks`、`canvasPath` 请勿手改；`user` 与「我的标注」可自由编辑。";
 
 /** @deprecated Use EPUB_BOOKMARK_PAGE_MAINTENANCE_NOTE */
 export const EPUB_BOOKMARK_PAGE_CALLOUT = EPUB_BOOKMARK_PAGE_MAINTENANCE_NOTE;
@@ -50,6 +50,7 @@ export interface EpubBookmarkPageRenderInput {
 	description?: string;
 	translator?: string;
 	coverPath?: string;
+	canvasPath?: string;
 	wordCount?: number;
 	chapterCount?: number;
 	updatedAt: number;
@@ -158,6 +159,7 @@ function buildEpubBookmarkYamlPayload(
 		description: input.description,
 		translator: input.translator,
 		coverPath: input.coverPath,
+		canvasPath: input.canvasPath || undefined,
 		wordCount: input.wordCount,
 		chapterCount: input.chapterCount,
 		...flat,

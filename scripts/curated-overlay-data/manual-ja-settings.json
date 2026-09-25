@@ -12,9 +12,6 @@
   "epub.settings.notifications.debugEnabled": "デバッグモードをオンにしました",
   "epub.settings.notifications.debugDisabled": "デバッグモードをオフにしました",
   "epub.settings.notifications.bookshelfDisplayModeUpdated": "ブックシェルフの既定表示を {mode} に切り替えました",
-  "epub.settings.notifications.autoSaveEnabled": "読書位置の自動保存をオンにしました",
-  "epub.settings.notifications.autoSaveDisabled": "読書位置の自動保存をオフにしました",
-  "epub.settings.notifications.autoSavePagesUpdated": "自動保存のしきい値を {pages} ページに更新しました",
   "epub.settings.notifications.templateSwitched": "{template} に切り替えました",
   "epub.settings.notifications.premiumRequired": "この設定はプレミアム機能です。先にライセンスを有効化してください"
 }

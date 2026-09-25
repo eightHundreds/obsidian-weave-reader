@@ -1,10 +1,3 @@
-import type { TextComponent } from "obsidian";
-import {
-	DEFAULT_CONTINUOUS_READING_POSITION_AUTO_SAVE_ENABLED,
-	DEFAULT_CONTINUOUS_READING_POSITION_AUTO_SAVE_PAGES,
-	normalizeContinuousReadingPositionAutoSaveEnabled,
-	normalizeContinuousReadingPositionAutoSavePages,
-} from "../../config/reading-position-auto-save";
 import {
 	createCustomTranslationProvider,
 	normalizeSelectionTranslationSettings,
@@ -33,19 +26,15 @@ export interface EpubBasicSettingsActionDeps {
 	getBookmarkFolderValue: () => string;
 	getInterfaceLanguageValue: () => InterfaceLanguagePreference;
 	getPremiumPreviewEnabled: () => boolean;
-	getContinuousReadingPositionAutoSaveEnabled: () => boolean;
-	getContinuousReadingPositionAutoSavePages: () => number;
 	getSourceNavigationOpenInNewTab: () => boolean;
 	getDebugModeEnabled: () => boolean;
 	getBookNotesExportTemplateFolderValue: () => string;
 	getBookNotesExportDefaultTemplatePath: () => string;
 	getCustomTranslationProviderDrafts: () => CustomWebTranslationProvider[];
-	getAutoSavePagesTextControl: () => TextComponent | null;
 	setBookmarkFolderInput: (value: string) => void;
 	setBookNotesExportTemplateFolderInput: (value: string) => void;
 	setBookNotesExportTemplateFolderValue: (value: string) => void;
 	setBookNotesExportDefaultTemplatePath: (value: string) => void;
-	setContinuousReadingPositionAutoSavePagesInput: (value: string) => void;
 	setExcerptSettingsVersion: (updater: (value: number) => number) => void;
 	save: () => Promise<void>;
 }
@@ -185,56 +174,6 @@ export function createEpubBasicSettingsActions(deps: EpubBasicSettingsActionDeps
 				},
 			});
 			modal.open();
-		},
-
-		async updateContinuousReadingPositionAutoSaveEnabled(enabled: boolean): Promise<void> {
-			const normalizedEnabled = normalizeContinuousReadingPositionAutoSaveEnabled(enabled);
-			if (deps.getContinuousReadingPositionAutoSaveEnabled() === normalizedEnabled) {
-				return;
-			}
-
-			plugin.settings.continuousReadingPositionAutoSaveEnabled = normalizedEnabled;
-			if (plugin.settings.continuousReadingPositionAutoSavePages == null) {
-				plugin.settings.continuousReadingPositionAutoSavePages =
-					DEFAULT_CONTINUOUS_READING_POSITION_AUTO_SAVE_PAGES;
-			}
-			await deps.save();
-
-			const autoSavePagesTextControl = deps.getAutoSavePagesTextControl();
-			autoSavePagesTextControl?.setDisabled(!normalizedEnabled);
-			if (!normalizedEnabled) {
-				const pages = normalizeContinuousReadingPositionAutoSavePages(
-					plugin.settings.continuousReadingPositionAutoSavePages
-				);
-				autoSavePagesTextControl?.setValue(String(pages));
-			}
-
-			showNotification(
-				normalizedEnabled
-					? t("epub.settings.notifications.autoSaveEnabled")
-					: t("epub.settings.notifications.autoSaveDisabled"),
-				"success"
-			);
-		},
-
-		async updateContinuousReadingPositionAutoSavePages(value: string): Promise<void> {
-			const normalizedPages = normalizeContinuousReadingPositionAutoSavePages(value);
-			deps.setContinuousReadingPositionAutoSavePagesInput(String(normalizedPages));
-
-			if (deps.getContinuousReadingPositionAutoSavePages() === normalizedPages) {
-				return;
-			}
-
-			plugin.settings.continuousReadingPositionAutoSavePages = normalizedPages;
-			if (plugin.settings.continuousReadingPositionAutoSaveEnabled == null) {
-				plugin.settings.continuousReadingPositionAutoSaveEnabled =
-					DEFAULT_CONTINUOUS_READING_POSITION_AUTO_SAVE_ENABLED;
-			}
-			await deps.save();
-			showNotification(
-				t("epub.settings.notifications.autoSavePagesUpdated", { pages: normalizedPages }),
-				"success"
-			);
 		},
 
 		async updateSourceNavigationOpenInNewTab(enabled: boolean): Promise<void> {

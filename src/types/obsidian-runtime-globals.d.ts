@@ -13,7 +13,13 @@ declare module "obsidian" {
 	interface PluginSettingTab {
 		getSettingDefinitions?(): Array<{
 			type: "render";
-			render: (containerEl: HTMLElement) => void;
+			/**
+			 * Obsidian 1.13 passes the Setting item. Older hosts may pass the container element.
+			 * Return a cleanup function; the settings renderer calls it before the next render.
+			 */
+			render: (
+				target: HTMLElement | { settingEl?: HTMLElement | null }
+			) => void | (() => void);
 		}>;
 	}
 }

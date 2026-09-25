@@ -461,7 +461,7 @@ describe('EpubStorageService', () => {
     expect(progress?.percent).toBe(66);
     expect(writes).not.toContain(booksPath);
     const bookmarkFile = Array.from(files.keys()).find((path) =>
-      path.includes('weave/epub-bookmarks/') && path.endsWith('.md')
+      path.includes('Weave EPUB Reader/') && path.endsWith('.md')
     );
     expect(bookmarkFile).toBeTruthy();
     expect(files.get(bookmarkFile || '') || '').toContain('readingState:');
@@ -494,7 +494,7 @@ describe('EpubStorageService', () => {
 
     const progress = await service.loadProgress('book-1');
     expect(progress?.percent).toBe(33);
-    expect(Array.from(files.keys()).some((path) => path.includes('weave/epub-bookmarks/'))).toBe(true);
+    expect(Array.from(files.keys()).some((path) => path.includes('Weave EPUB Reader/'))).toBe(true);
   });
 
   it('ignores flush when the storage service reference is missing', async () => {
@@ -580,7 +580,7 @@ describe('EpubStorageService', () => {
     });
 
     const bookmarkFile = Array.from(files.keys()).find((path) =>
-      path.includes('weave/epub-bookmarks/') && path.endsWith('.md')
+      path.includes('Weave EPUB Reader/') && path.endsWith('.md')
     );
     expect(bookmarkFile).toBeTruthy();
     const bookmarkContent = files.get(bookmarkFile || '') || '';
@@ -971,17 +971,26 @@ describe('EpubStorageService', () => {
     expect([undefined, []]).toContainEqual(readLocalEpubData(files).scanIndex);
   });
 
-  it('persists canvas bindings into unified local data without recreating legacy sync files', async () => {
+  it('persists canvas bindings into the bookmark markdown', async () => {
     const { app, files } = createMemoryApp();
     const service = new EpubStorageService(app);
+    await service.saveBook(createBook());
 
     await service.setCanvasBinding('book-1', 'Canvas/demo.canvas');
 
     expect(await service.getCanvasBinding('book-1')).toBe('Canvas/demo.canvas');
-    expect(readLocalEpubData(files).canvasBindings).toEqual({
-      'book-1': 'Canvas/demo.canvas',
-    });
+    const bookmark = [...files.entries()].find(
+      ([path]) => path.includes('Weave EPUB Reader/') && path.endsWith('.md')
+    );
+    expect(bookmark?.[1]).toContain('canvasPath: "Canvas/demo.canvas"');
+    expect(readLocalEpubData(files).canvasBindings ?? {}).toEqual({});
     expect(files.has(`${SYNC_EPUB_ROOT}/canvas-bindings.json`)).toBe(false);
+
+    await service.updateCanvasBindingReferences('Canvas/demo.canvas', 'Notes/demo.canvas');
+    expect(await service.getCanvasBinding('book-1')).toBe('Notes/demo.canvas');
+
+    await service.removeCanvasBinding('book-1');
+    expect(await service.getCanvasBinding('book-1')).toBeNull();
   });
 
   it('deduplicates concealed text fragments by cfi range when adding repeatedly', async () => {

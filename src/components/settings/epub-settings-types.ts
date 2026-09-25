@@ -1,4 +1,3 @@
-import type { TextComponent } from "obsidian";
 import type {
 	CustomWebTranslationProvider,
 	SelectionTranslationSettings,
@@ -31,9 +30,6 @@ export interface EpubBasicSettingsSnapshot {
 	bookNotesExportTemplateFolderValue: string;
 	bookNotesExportTemplateFolderInput: string;
 	bookNotesExportDefaultTemplatePath: string;
-	continuousReadingPositionAutoSaveEnabled: boolean;
-	continuousReadingPositionAutoSavePages: number;
-	continuousReadingPositionAutoSavePagesInput: string;
 	sourceNavigationOpenInNewTab: boolean;
 	debugModeEnabled: boolean;
 	selectionTranslationSettings: SelectionTranslationSettings;
@@ -44,16 +40,12 @@ export interface EpubBasicSettingsCallbacks {
 	save: () => Promise<void>;
 	setBookmarkFolderInput: (value: string) => void;
 	setBookNotesExportTemplateFolderInput: (value: string) => void;
-	setContinuousReadingPositionAutoSavePagesInput: (value: string) => void;
-	setAutoSavePagesTextControl: (control: TextComponent | null) => void;
 	updateBookmarkFolder: (folderPath: string) => Promise<void>;
 	updateInterfaceLanguage: (value: InterfaceLanguagePreference) => Promise<void>;
 	updatePremiumPreview: (enabled: boolean) => Promise<void>;
 	updateBookNotesExportTemplatePath: (templatePath: string) => Promise<void>;
 	updateBookNotesExportTemplateFolder: (folderPath: string) => Promise<void>;
 	openBookNotesExportTemplateModal: () => void;
-	updateContinuousReadingPositionAutoSaveEnabled: (enabled: boolean) => Promise<void>;
-	updateContinuousReadingPositionAutoSavePages: (value: string) => Promise<void>;
 	setBuiltinTranslationProviderEnabled: (providerId: string, enabled: boolean) => Promise<void>;
 	updateCustomTranslationProvider: (
 		index: number,

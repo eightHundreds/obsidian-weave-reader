@@ -1,16 +1,6 @@
 <script lang="ts">
  	import { onMount } from 'svelte';
 	import { Platform } from 'obsidian';
-	import {
-		DEFAULT_CONTINUOUS_READING_POSITION_AUTO_SAVE_ENABLED,
-		DEFAULT_CONTINUOUS_READING_POSITION_AUTO_SAVE_PAGES,
-		normalizeContinuousReadingPositionAutoSaveEnabled,
-		normalizeContinuousReadingPositionAutoSavePages,
-	} from '../../config/reading-position-auto-save';
-	import {
-		advanceReadingPositionAutoSaveTracker,
-		createReadingPositionAutoSaveTrackerState,
-	} from '../../services/epub/reading-position-auto-save-tracker';
 	import { choosePreferredRestorePosition } from '../../services/epub/restore-position';
 	import { reportEpubError } from '../../services/epub/epub-error';
 	import type { EpubBook, EpubExcerptSettings, EpubFlowMode, EpubLayoutMode, EpubReaderEngine, EpubReaderSettings, EpubStorageService, PaginationInfo, ReaderHighlight, ReadingPosition } from '../../services/epub';
@@ -18,6 +8,9 @@
 	import type { EpubAnnotationService } from '../../services/epub';
 	import type { EpubBacklinkHighlightService } from '../../services/epub/EpubBacklinkHighlightService';
 	import { logger } from '../../utils/logger';
+
+	const READING_PROGRESS_AUTO_SAVE_IDLE_MS = 2000;
+	const READING_PROGRESS_AUTO_SAVE_MAX_WAIT_MS = 30000;
 
 	interface Props {
 		filePath: string;
@@ -30,7 +23,6 @@
 		excerptSettings: EpubExcerptSettings;
 		canUseReadingProgress?: boolean;
 		canUseExcerptNotes?: boolean;
-		getReadingPositionAutoSaveConfig?: () => { enabled: boolean; pages: number };
 		isParagraphModeActive?: () => boolean;
 		isParagraphModeProgressDetached?: () => boolean;
 		shouldSkipReadingProgressPersistOnRelocate?: () => boolean;
@@ -54,7 +46,6 @@
 		excerptSettings,
 		canUseReadingProgress = true,
 		canUseExcerptNotes = true,
-		getReadingPositionAutoSaveConfig,
 		isParagraphModeActive,
 		isParagraphModeProgressDetached,
 		shouldSkipReadingProgressPersistOnRelocate,
@@ -82,9 +73,13 @@
 	let renderSessionToken = 0;
 	let mobileStabilizationToken = 0;
 	let viewDisposed = false;
-	let readingPositionAutoSaveTrackerState = createReadingPositionAutoSaveTrackerState('', 0);
-	let readingPositionAutoSaveEnabled = DEFAULT_CONTINUOUS_READING_POSITION_AUTO_SAVE_ENABLED;
-	let readingPositionAutoSavePages = DEFAULT_CONTINUOUS_READING_POSITION_AUTO_SAVE_PAGES;
+	let pendingAutoSavePosition: { bookId: string; position: ReadingPosition } | null = null;
+	let pendingAutoSaveSince = 0;
+	let autoSaveIdleTimer: ReturnType<typeof window.setTimeout> | null = null;
+	// Opening lays out the start of the book before jumping back to the saved
+	// position. Ignore those locations until that jump finishes, so leaving
+	// immediately cannot replace the stored progress with 0%.
+	let readingProgressRestoreSettled = false;
 
 	function notifyProgressChange(percent: number): void {
 		if (typeof onProgressChangeProp === 'function') {
@@ -116,23 +111,47 @@
 		}
 	}
 
-	function resolveReadingPositionAutoSaveConfig(): { enabled: boolean; pages: number } {
-		const config = getReadingPositionAutoSaveConfig?.();
-		return {
-			enabled: normalizeContinuousReadingPositionAutoSaveEnabled(
-				config?.enabled ?? DEFAULT_CONTINUOUS_READING_POSITION_AUTO_SAVE_ENABLED
-			),
-			pages: normalizeContinuousReadingPositionAutoSavePages(
-				config?.pages ?? DEFAULT_CONTINUOUS_READING_POSITION_AUTO_SAVE_PAGES
-			),
-		};
+	function clearAutoSaveIdleTimer(): void {
+		if (autoSaveIdleTimer) {
+			window.clearTimeout(autoSaveIdleTimer);
+			autoSaveIdleTimer = null;
+		}
 	}
 
-	function resetReadingPositionAutoSaveTracking(currentPage = 0): void {
-		readingPositionAutoSaveTrackerState = createReadingPositionAutoSaveTrackerState(
-			String(book?.id || ''),
-			currentPage
-		);
+	function discardPendingAutoSave(): void {
+		clearAutoSaveIdleTimer();
+		pendingAutoSavePosition = null;
+		pendingAutoSaveSince = 0;
+	}
+
+	async function flushPendingAutoSave(): Promise<void> {
+		clearAutoSaveIdleTimer();
+		const pending = pendingAutoSavePosition;
+		pendingAutoSavePosition = null;
+		pendingAutoSaveSince = 0;
+		if (!pending || pending.bookId !== String(book?.id || '')) {
+			return;
+		}
+		await persistReadingProgress(pending.position);
+		await flushEpubPendingProgress(storageService);
+		await onAutoReadingPositionSaved?.(pending.position);
+	}
+
+	function scheduleAutoSave(position: ReadingPosition): void {
+		const now = Date.now();
+		if (!pendingAutoSavePosition) {
+			pendingAutoSaveSince = now;
+		}
+		pendingAutoSavePosition = { bookId: String(book?.id || ''), position };
+		if (now - pendingAutoSaveSince >= READING_PROGRESS_AUTO_SAVE_MAX_WAIT_MS) {
+			void flushPendingAutoSave();
+			return;
+		}
+		clearAutoSaveIdleTimer();
+		autoSaveIdleTimer = window.setTimeout(() => {
+			autoSaveIdleTimer = null;
+			void flushPendingAutoSave();
+		}, READING_PROGRESS_AUTO_SAVE_IDLE_MS);
 	}
 
 	async function persistReadingProgress(position: EpubBook['currentPosition']): Promise<void> {
@@ -151,49 +170,17 @@
 		await storageService.saveProgress(book.id, position, readingStats);
 	}
 
-	async function syncReadingPositionPersistence(position: EpubBook['currentPosition'], info: PaginationInfo): Promise<void> {
-		if (!canUseReadingProgress) {
-			resetReadingPositionAutoSaveTracking(info.currentPage);
+	async function syncReadingPositionPersistence(position: EpubBook['currentPosition']): Promise<void> {
+		if (!readingProgressRestoreSettled || !canUseReadingProgress || !book?.id || !position?.cfi) {
 			return;
 		}
 		if (isParagraphModeActive?.() && !isParagraphModeProgressDetached?.()) {
+			discardPendingAutoSave();
 			await persistReadingProgress(position);
 			await onAutoReadingPositionSaved?.(position as ReadingPosition);
-			resetReadingPositionAutoSaveTracking(info.currentPage);
 			return;
 		}
-		const config = resolveReadingPositionAutoSaveConfig();
-		const currentBookId = String(book?.id || '');
-
-		if (
-			currentBookId !== readingPositionAutoSaveTrackerState.trackedBookId
-			|| config.enabled !== readingPositionAutoSaveEnabled
-			|| config.pages !== readingPositionAutoSavePages
-		) {
-			readingPositionAutoSaveEnabled = config.enabled;
-			readingPositionAutoSavePages = config.pages;
-			resetReadingPositionAutoSaveTracking(info.currentPage);
-		}
-
-		if (!book) {
-			return;
-		}
-
-		const trackerResult = advanceReadingPositionAutoSaveTracker(readingPositionAutoSaveTrackerState, {
-			bookId: currentBookId,
-			currentPage: info.currentPage,
-			enabled: config.enabled,
-			pages: config.pages,
-		});
-		readingPositionAutoSaveTrackerState = trackerResult.nextState;
-
-		if (!trackerResult.shouldPersist) {
-			return;
-		}
-
-		await persistReadingProgress(position);
-		await onAutoReadingPositionSaved?.(position as ReadingPosition);
-		resetReadingPositionAutoSaveTracking(info.currentPage);
+		scheduleAutoSave(position as ReadingPosition);
 	}
 
 	async function persistLatestReadingProgressOnTeardown(
@@ -212,6 +199,10 @@
 				return;
 			}
 			if (isParagraphModeProgressDetached?.()) {
+				await flushEpubPendingProgress(targetStorageService);
+				return;
+			}
+			if (!readingProgressRestoreSettled) {
 				await flushEpubPendingProgress(targetStorageService);
 				return;
 			}
@@ -531,6 +522,7 @@
 		if (!book || !viewerContainer || rendered) return;
 		const renderToken = ++renderSessionToken;
 		rendered = true;
+		readingProgressRestoreSettled = false;
 
 		try {
 			// Start collecting highlights in parallel with rendering
@@ -582,9 +574,12 @@
 					}
 				}
 			}
+			if (isStaleRender(renderToken)) {
+				return;
+			}
+			readingProgressRestoreSettled = true;
 
 			const currentPaginationInfo = await readerService.getPaginationInfo();
-			resetReadingPositionAutoSaveTracking(currentPaginationInfo.currentPage);
 			notifyProgressChange(canUseReadingProgress ? readerService.getReadingProgress() : 0);
 			notifyPaginationChange(currentPaginationInfo);
 			notifyChapterChange(readerService.getCurrentChapterTitle());
@@ -719,10 +714,13 @@
 	function registerRelocatedHandler() {
 		if (detachRelocatedHandler) return;
 		detachRelocatedHandler = readerService.onRelocated(async (position) => {
+			if (!readingProgressRestoreSettled) {
+				return;
+			}
 			const paginationInfo = await readerService.getPaginationInfo();
 			const skipPersist = shouldSkipReadingProgressPersistOnRelocate?.() === true;
 			if (!skipPersist) {
-				await syncReadingPositionPersistence(position, paginationInfo);
+				await syncReadingPositionPersistence(position);
 			}
 			notifyProgressChange(canUseReadingProgress ? position.percent : 0);
 			notifyPaginationChange(paginationInfo);
@@ -803,10 +801,25 @@
 
 	onMount(() => {
 		const capturedStorageService = storageService;
+		const ownerDocument = viewerContainer?.ownerDocument ?? activeDocument;
+		const ownerWindow = ownerDocument.defaultView ?? window;
+		const handleVisibilityChange = () => {
+			if (ownerDocument.visibilityState === 'hidden') {
+				void flushPendingAutoSave();
+			}
+		};
+		const handlePageHide = () => {
+			void flushPendingAutoSave();
+		};
+		ownerDocument.addEventListener('visibilitychange', handleVisibilityChange);
+		ownerWindow.addEventListener('pagehide', handlePageHide);
 		return () => {
+			ownerDocument.removeEventListener('visibilitychange', handleVisibilityChange);
+			ownerWindow.removeEventListener('pagehide', handlePageHide);
 			viewDisposed = true;
 			renderSessionToken += 1;
 			mobileStabilizationToken += 1;
+			discardPendingAutoSave();
 			void persistLatestReadingProgressOnTeardown(capturedStorageService);
 			if (detachRelocatedHandler) {
 				detachRelocatedHandler();

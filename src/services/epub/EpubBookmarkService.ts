@@ -104,6 +104,7 @@ interface EpubBookmarkFileFrontmatter {
 	description?: string;
 	translator?: string;
 	coverPath?: string;
+	canvasPath?: string;
 	wordCount?: number;
 	chapterCount?: number;
 	updatedAt: number;
@@ -244,6 +245,21 @@ export function buildLegacyEpubBookmarkTitleIdPrefix(title: string): string | nu
 		return null;
 	}
 	return `${titleSegment}--`;
+}
+
+function normalizeBookmarkCanvasPath(value: unknown): string | null {
+	const normalized = normalizePath(unknownPlainText(value).trim());
+	return normalized || null;
+}
+
+function remapBookmarkCanvasPath(filePath: string, oldPath: string, newPath: string): string | null {
+	if (filePath === oldPath) {
+		return newPath;
+	}
+	if (filePath.startsWith(`${oldPath}/`)) {
+		return `${newPath}${filePath.slice(oldPath.length)}`;
+	}
+	return null;
 }
 
 function isFilesystemNotFoundError(error: unknown): boolean {
@@ -476,6 +492,62 @@ export class EpubBookmarkService {
 			await this.writeBookmarkFile(filePath, nextFrontmatter);
 			return filePath;
 		});
+	}
+
+	async readCanvasBinding(book: EpubBook): Promise<string | null> {
+		const fileData = await this.readBookmarkFileForBook(book);
+		return normalizeBookmarkCanvasPath(fileData?.canvasPath);
+	}
+
+	async writeCanvasBinding(book: EpubBook, canvasPath: string | null): Promise<void> {
+		await this.runSerializedBookmarkMutation(book, async () => {
+			const filePath = await this.ensureCanonicalBookmarkFilePath(book);
+			const existing =
+				(await this.readBookmarkFileByPath(filePath)) || this.createEmptyFileFrontmatter(book);
+			const nextFrontmatter = this.mergeBookIdentity(existing, book);
+			const normalized = normalizeBookmarkCanvasPath(canvasPath);
+			if (normalized) {
+				nextFrontmatter.canvasPath = normalized;
+			} else {
+				delete nextFrontmatter.canvasPath;
+			}
+			nextFrontmatter.updatedAt = Date.now();
+			await this.writeBookmarkFile(filePath, nextFrontmatter);
+		});
+	}
+
+	async remapCanvasBindingPaths(oldPath: string, newPath: string): Promise<number> {
+		const normalizedOldPath = normalizePath(String(oldPath || "").trim());
+		const normalizedNewPath = normalizePath(String(newPath || "").trim());
+		if (!normalizedOldPath || !normalizedNewPath || normalizedOldPath === normalizedNewPath) {
+			return 0;
+		}
+
+		const folderPath = this.getBookmarkFolder();
+		const candidates = this.app.vault
+			.getFiles()
+			.filter(
+				(file) => file.extension === "md" && this.isBookmarkFileInsideFolder(file.path, folderPath)
+			);
+		let updated = 0;
+
+		for (const file of candidates) {
+			const fileData = await this.readBookmarkFileByPath(file.path);
+			const currentPath = normalizeBookmarkCanvasPath(fileData?.canvasPath);
+			if (!fileData || !currentPath) {
+				continue;
+			}
+			const remapped = remapBookmarkCanvasPath(currentPath, normalizedOldPath, normalizedNewPath);
+			if (!remapped || remapped === currentPath) {
+				continue;
+			}
+			fileData.canvasPath = remapped;
+			fileData.updatedAt = Date.now();
+			await this.writeBookmarkFile(file.path, fileData);
+			updated += 1;
+		}
+
+		return updated;
 	}
 
 	async updateBookFileReferences(oldPath: string, newPath: string): Promise<number> {
@@ -1043,6 +1115,7 @@ export class EpubBookmarkService {
 			description: typeof value.description === "string" ? value.description : undefined,
 			translator: typeof value.translator === "string" ? value.translator : undefined,
 			coverPath: typeof value.coverPath === "string" ? value.coverPath : undefined,
+			canvasPath: normalizeBookmarkCanvasPath(value.canvasPath) || undefined,
 			wordCount: typeof value.wordCount === "number" ? value.wordCount : undefined,
 			chapterCount: typeof value.chapterCount === "number" ? value.chapterCount : undefined,
 			updatedAt: typeof value.updatedAt === "number" ? value.updatedAt : 0,
@@ -1265,6 +1338,7 @@ export class EpubBookmarkService {
 				description: frontmatter.description,
 				translator: frontmatter.translator,
 				coverPath: frontmatter.coverPath,
+				canvasPath: frontmatter.canvasPath,
 				wordCount: frontmatter.wordCount,
 				chapterCount: frontmatter.chapterCount,
 				updatedAt: frontmatter.updatedAt,

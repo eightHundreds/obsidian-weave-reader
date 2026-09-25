@@ -99,12 +99,6 @@
   max-width: 100%;
 }
 
-.epub-native-settings-host .epub-reading-position-auto-save-pages-setting .setting-item-control {
-  flex: 0 1 clamp(9rem, 24%, 12rem);
-  width: clamp(9rem, 24%, 12rem);
-  max-width: 100%;
-}
-
 .epub-native-settings-host .epub-book-notes-template-setting .setting-item-control,
 .epub-native-settings-host .epub-export-template-select-setting .setting-item-control {
   flex: 0 1 clamp(10rem, 28%, 14rem);
@@ -118,10 +112,6 @@
 }
 
 .epub-native-settings-host .epub-bookmark-setting input[type="search"] {
-  width: 100%;
-}
-
-.epub-native-settings-host .epub-reading-position-auto-save-pages-setting input[type="number"] {
   width: 100%;
 }
 
@@ -394,12 +384,6 @@
   }
 
   .epub-native-settings-host .epub-bookmark-setting .setting-item-control {
-    width: 100%;
-    max-width: 100%;
-    flex-basis: auto;
-  }
-
-  .epub-native-settings-host .epub-reading-position-auto-save-pages-setting .setting-item-control {
     width: 100%;
     max-width: 100%;
     flex-basis: auto;

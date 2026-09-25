@@ -1,8 +1,4 @@
 {
-  "epub.settings.basic.autoSavePages": "Порог страниц непрерывного чтения",
-  "epub.settings.basic.autoSavePagesDesc": "Автосохранение после указанного числа страниц. Диапазон: {min}–{max} стр. По умолчанию: {default}.",
-  "epub.settings.basic.autoSaveReadingPosition": "Автосохранение позиции чтения",
-  "epub.settings.basic.autoSaveReadingPositionDesc": "Автоматически сохраняет текущую позицию после непрерывного чтения заданного числа страниц. Последняя позиция также сохраняется при закрытии ридера или смене книги.",
   "epub.settings.basic.bookmarkFolder": "Папка закладок",
   "epub.settings.basic.bookmarkFolderDesc": "Файлы закладок сохраняются в выбранную папку (бесплатная базовая функция).",
   "epub.settings.basic.bookmarkFolderPlaceholder": "Выберите путь к папке",

@@ -608,7 +608,6 @@ export const epubTranslations: Record<EpubTranslationLocale, TranslationKey> = {
 				referenceJumpMenu: "跳转到已记录位置",
 				referenceUpdateMenu: "更新为当前位置",
 				referenceClearMenu: "清除已记录位置",
-				readingPositionAutoSaveMenu: "连续阅读后自动更新",
 				referenceFallbackTitle: "参考阅读位置",
 				lastReadingPointSavedStatus: "已保存最后阅读点：{title}",
 				referenceSavedStatus: "已记录参考位置：{title}",
@@ -882,9 +881,6 @@ export const epubTranslations: Record<EpubTranslationLocale, TranslationKey> = {
 					debugEnabled: "已开启调试模式",
 					debugDisabled: "已关闭调试模式",
 					bookshelfDisplayModeUpdated: "我的书架默认显示已切换为{mode}",
-					autoSaveEnabled: "已开启自动记录阅读位置",
-					autoSaveDisabled: "已关闭自动记录阅读位置",
-					autoSavePagesUpdated: "已将自动记录阈值更新为 {pages} 页",
 					templateSwitched: "已切换为{template}",
 					premiumRequired: "当前设置属于高级功能，请先激活许可证",
 					interfaceLanguageUpdated: "界面语言已更新",
@@ -913,12 +909,6 @@ export const epubTranslations: Record<EpubTranslationLocale, TranslationKey> = {
 					bookshelfDisplayMode: "我的书架默认显示模式",
 					bookshelfDisplayModeDesc:
 						"可在跟随位置、列表详情、卡片网格、仅看封面之间切换，顶部多功能菜单会同步使用这套模式。",
-					autoSaveReadingPosition: "自动记录阅读位置",
-					autoSaveReadingPositionDesc:
-						"连续阅读达到设定页数后自动保存当前位置；关闭阅读器或切换书籍时仍会保存最后位置。",
-					autoSavePages: "连续阅读页数",
-					autoSavePagesDesc:
-						"达到该页数时自动记录一次阅读位置。范围 {min}-{max} 页，默认 {default} 页。",
 					selectionTranslationTitle: "选区工具条 · 查词与翻译",
 					selectionTranslationDesc:
 						"在阅读器中选中文本后，可从工具条一键查词或翻译。选中文本会自动填入，无需复制粘贴。",
@@ -1825,7 +1815,6 @@ export const epubTranslations: Record<EpubTranslationLocale, TranslationKey> = {
 				referenceJumpMenu: "Jump to recorded position",
 				referenceUpdateMenu: "Update to current position",
 				referenceClearMenu: "Clear recorded position",
-				readingPositionAutoSaveMenu: "Auto-update after continuous reading",
 				referenceFallbackTitle: "Reading reference point",
 				lastReadingPointSavedStatus: "Last reading point saved: {title}",
 				referenceSavedStatus: "Reference point recorded: {title}",
@@ -2114,9 +2103,6 @@ export const epubTranslations: Record<EpubTranslationLocale, TranslationKey> = {
 					debugEnabled: "Debug mode enabled",
 					debugDisabled: "Debug mode disabled",
 					bookshelfDisplayModeUpdated: "Default bookshelf view switched to {mode}",
-					autoSaveEnabled: "Auto-save reading position enabled",
-					autoSaveDisabled: "Auto-save reading position disabled",
-					autoSavePagesUpdated: "Auto-save threshold updated to {pages} pages",
 					templateSwitched: "Switched to {template}",
 					premiumRequired: "This setting is premium. Please activate a license first.",
 					interfaceLanguageUpdated: "Interface language updated",
@@ -2146,12 +2132,6 @@ export const epubTranslations: Record<EpubTranslationLocale, TranslationKey> = {
 					bookshelfDisplayMode: "Default bookshelf display mode",
 					bookshelfDisplayModeDesc:
 						"Choose between follow location, detailed list, card grid, and covers only. The reader menus use the same mode.",
-					autoSaveReadingPosition: "Auto-save reading position",
-					autoSaveReadingPositionDesc:
-						"Automatically save the current position after continuous reading reaches the configured page count. The last position is still saved when closing the reader or switching books.",
-					autoSavePages: "Continuous reading page threshold",
-					autoSavePagesDesc:
-						"Auto-save once reading reaches this many pages. Range: {min}-{max} pages. Default: {default}.",
 					selectionTranslationTitle: "Selection toolbar · Lookup & translation",
 					selectionTranslationDesc:
 						"After selecting text in the reader, look up words or translate passages with one click. The selection is passed in the URL—no copy and paste.",

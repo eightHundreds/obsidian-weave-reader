@@ -22,12 +22,6 @@ import {
 	resetEpubStorageServiceCache,
 	type TocItem,
 } from "./services/epub";
-import {
-	DEFAULT_CONTINUOUS_READING_POSITION_AUTO_SAVE_ENABLED,
-	DEFAULT_CONTINUOUS_READING_POSITION_AUTO_SAVE_PAGES,
-	normalizeContinuousReadingPositionAutoSaveEnabled,
-	normalizeContinuousReadingPositionAutoSavePages,
-} from "./config/reading-position-auto-save";
 import { PremiumFeatureGuard } from "./services/premium/PremiumFeatureGuard";
 import { configureNavigationHub } from "./services/navigation/navigation-hub-access";
 import { getBookSessionManager } from "./services/epub/session/book-session-manager-access";
@@ -111,8 +105,6 @@ interface StandaloneEpubPluginSettings {
 	bookshelfAutoViewByLocationEnabled: boolean;
 	bookshelfDisplayMode: BookshelfDisplayMode;
 	bookmarkFolder: string;
-	continuousReadingPositionAutoSaveEnabled: boolean;
-	continuousReadingPositionAutoSavePages: number;
 	lastSelectedIRDeckId: string;
 	selectionQuickCreateLastFolder: string;
 	epubMarkdownExportLastFolder: string;
@@ -130,9 +122,6 @@ const DEFAULT_STANDALONE_EPUB_SETTINGS: StandaloneEpubPluginSettings = {
 	bookshelfAutoViewByLocationEnabled: false,
 	bookshelfDisplayMode: DEFAULT_BOOKSHELF_DISPLAY_MODE,
 	bookmarkFolder: DEFAULT_EPUB_BOOKMARK_FOLDER,
-	continuousReadingPositionAutoSaveEnabled:
-		DEFAULT_CONTINUOUS_READING_POSITION_AUTO_SAVE_ENABLED,
-	continuousReadingPositionAutoSavePages: DEFAULT_CONTINUOUS_READING_POSITION_AUTO_SAVE_PAGES,
 	lastSelectedIRDeckId: "",
 	selectionQuickCreateLastFolder: "",
 	epubMarkdownExportLastFolder: "",
@@ -245,17 +234,6 @@ export default class StandaloneEpubPlugin extends Plugin implements EpubHostCapa
 			this.settings.bookshelfDisplayMode === DEFAULT_BOOKSHELF_DISPLAY_MODE;
 	}
 
-	private syncReadingPositionAutoSaveSettings(): void {
-		this.settings.continuousReadingPositionAutoSaveEnabled =
-			normalizeContinuousReadingPositionAutoSaveEnabled(
-				this.settings.continuousReadingPositionAutoSaveEnabled
-			);
-		this.settings.continuousReadingPositionAutoSavePages =
-			normalizeContinuousReadingPositionAutoSavePages(
-				this.settings.continuousReadingPositionAutoSavePages
-			);
-	}
-
 	getEpubStorageService(): EpubStorageService {
 		if (!this.epubStorageService) {
 			this.epubStorageService = new EpubStorageService(this.app);
@@ -341,7 +319,14 @@ export default class StandaloneEpubPlugin extends Plugin implements EpubHostCapa
 		if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
 			return {};
 		}
-		return raw;
+		const {
+			continuousReadingPositionAutoSaveEnabled,
+			continuousReadingPositionAutoSavePages,
+			...settings
+		} = raw as Record<string, unknown>;
+		void continuousReadingPositionAutoSaveEnabled;
+		void continuousReadingPositionAutoSavePages;
+		return settings as Partial<PersistedStandaloneEpubPluginSettings>;
 	}
 
 	private async persistSettingsData(): Promise<void> {
@@ -385,7 +370,6 @@ export default class StandaloneEpubPlugin extends Plugin implements EpubHostCapa
 		this.syncDebugSettings();
 		this.syncPremiumPreviewSettings();
 		this.syncBookshelfDisplaySettings();
-		this.syncReadingPositionAutoSaveSettings();
 		this.syncSelectionTranslationSettings();
 		this.settings.sourceNavigationOpenInNewTab = this.settings.sourceNavigationOpenInNewTab !== false;
 		this.settings.interfaceLanguage = normalizeInterfaceLanguagePreference(
@@ -411,7 +395,6 @@ export default class StandaloneEpubPlugin extends Plugin implements EpubHostCapa
 		this.syncDebugSettings();
 		this.syncPremiumPreviewSettings();
 		this.syncBookshelfDisplaySettings();
-		this.syncReadingPositionAutoSaveSettings();
 		this.syncSelectionTranslationSettings();
 		this.settings.bookmarkFolder =
 			normalizeEpubBookmarkFolderPath(this.settings.bookmarkFolder) || DEFAULT_EPUB_BOOKMARK_FOLDER;

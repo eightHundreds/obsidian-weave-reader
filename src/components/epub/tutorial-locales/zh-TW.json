@@ -178,7 +178,7 @@
     {
       "title": "書籤與閱讀位置",
       "paragraphs": [
-        "每本書對應庫內一份專有 Markdown（預設 weave/epub-bookmarks/data_{書名}.md），閱讀進度與書籤列表寫入該檔案 YAML，隨 Vault 全平臺同步。"
+        "每本書對應庫內一份專有 Markdown（預設 Weave EPUB Reader/data_{書名}.md），閱讀進度與書籤列表寫入該檔案 YAML，隨 Vault 全平臺同步。"
       ],
       "listGroups": [
         {

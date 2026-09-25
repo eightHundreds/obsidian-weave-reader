@@ -44,14 +44,14 @@ bookmarks: []
 			},
 		} as any;
 
-		const backup = await createEpubBookmarkMigrationBackup(app, "weave/epub-bookmarks", [
-			"weave/epub-bookmarks/data_Demo.md",
+		const backup = await createEpubBookmarkMigrationBackup(app, "Weave EPUB Reader", [
+			"Weave EPUB Reader/data_Demo.md",
 		]);
 
 		expect(backup.fileCount).toBe(1);
 		expect([...writes.keys()].some((path) => path.includes("manifest.json"))).toBe(true);
 		expect(
-			[...writes.keys()].some((path) => path.includes("weave__epub-bookmarks__data_Demo.md"))
+			[...writes.keys()].some((path) => path.includes("Weave EPUB Reader__data_Demo.md"))
 		).toBe(true);
 	});
 

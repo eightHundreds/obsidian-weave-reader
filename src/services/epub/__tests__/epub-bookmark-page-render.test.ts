@@ -22,7 +22,7 @@ describe("epub-bookmark-page-render", () => {
 				bookAuthor: "作者甲",
 				publisher: "测试出版社",
 				description: "这是一本用于测试的书籍简介。",
-				coverPath: "weave/epub-bookmarks/covers/epubsrc-demo.jpg",
+				coverPath: "Weave EPUB Reader/covers/epubsrc-demo.jpg",
 				updatedAt: 1_700_000_000_000,
 				bookmarks: [],
 				readingState: {

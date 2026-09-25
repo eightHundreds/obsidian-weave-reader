@@ -109,10 +109,6 @@
 	} from '../../services/epub/epub-card-highlight-sync';
 	import { isEphemeralEditorHighlightSourcePath } from '../../services/epub/epub-highlight-source-path';
 	import type { EpubHostCreateCardInput } from '../../services/epub';
-	import {
-		normalizeContinuousReadingPositionAutoSaveEnabled,
-		normalizeContinuousReadingPositionAutoSavePages,
-	} from '../../config/reading-position-auto-save';
 	import '../../styles/epub/epub-reader.css';
 
 	interface Props {
@@ -126,7 +122,6 @@
 		onTitleChange?: (title: string) => void;
 		onChapterTitleChange?: (title: string) => void;
 		onReadingReferencePointChange?: (point: EpubReadingReferencePoint | null) => void;
-		onReadingPositionAutoSaveChange?: () => void;
 		onPremiumUiStateChange?: () => void;
 		onReaderSettingsLoaded?: (settings: EpubReaderSettings) => void;
 		onBackFromBookshelf?: () => void | Promise<void>;
@@ -155,8 +150,6 @@
 			showPremiumFeaturePreview?: (featureId: string) => void;
 			saveReadingReferencePoint?: () => Promise<void>;
 			openReadingPositionMenu?: (event: MouseEvent | KeyboardEvent) => void;
-			getReadingPositionAutoSaveEnabled?: () => boolean;
-			setReadingPositionAutoSaveEnabled?: (enabled: boolean) => Promise<boolean>;
 			bindCanvasPath: (canvasPath: string) => void;
 			unbindCanvas: () => void;
 			getCanvasService: () => EpubCanvasService;
@@ -185,7 +178,6 @@
 		onTitleChange, 
 		onChapterTitleChange,
 		onReadingReferencePointChange,
-		onReadingPositionAutoSaveChange,
 		onPremiumUiStateChange,
 		onReaderSettingsLoaded, 
 		onBackFromBookshelf,
@@ -468,7 +460,6 @@
 		}
 		void refreshReadingReferencePointState(book?.id);
 		syncAsActiveEpubDocumentIfActive();
-		onReadingPositionAutoSaveChange?.();
 		onPremiumUiStateChange?.();
 	}
 
@@ -1523,47 +1514,6 @@
 		return resolveEpubHost(app);
 	}
 
-	function getContinuousReadingPositionAutoSaveConfig(): { enabled: boolean; pages: number } {
-		const host = getEpubActionHost() as {
-			settings?: {
-				continuousReadingPositionAutoSaveEnabled?: unknown;
-				continuousReadingPositionAutoSavePages?: unknown;
-			};
-		} | null;
-
-		return {
-			enabled: normalizeContinuousReadingPositionAutoSaveEnabled(
-				host?.settings?.continuousReadingPositionAutoSaveEnabled
-			),
-			pages: normalizeContinuousReadingPositionAutoSavePages(
-				host?.settings?.continuousReadingPositionAutoSavePages
-			),
-		};
-	}
-
-	async function setContinuousReadingPositionAutoSaveEnabled(enabled: boolean): Promise<boolean> {
-		const host = getEpubActionHost() as
-			| ({
-				settings?: {
-					continuousReadingPositionAutoSaveEnabled?: unknown;
-					continuousReadingPositionAutoSavePages?: unknown;
-				};
-				saveSettings?: () => Promise<void>;
-			})
-			| null;
-		const normalizedEnabled = normalizeContinuousReadingPositionAutoSaveEnabled(enabled);
-		if (!host?.settings) {
-			return normalizedEnabled;
-		}
-		host.settings.continuousReadingPositionAutoSaveEnabled = normalizedEnabled;
-		if (host.settings.continuousReadingPositionAutoSavePages == null) {
-			host.settings.continuousReadingPositionAutoSavePages =
-				DEFAULT_CONTINUOUS_READING_POSITION_AUTO_SAVE_PAGES;
-		}
-		await host.saveSettings?.();
-		return normalizedEnabled;
-	}
-
 	const bookshelfProgressChangedNotifier = createDebouncedBookshelfProgressChangedNotifier();
 
 	function notifyBookshelfProgressChanged(bookPath?: string) {
@@ -1573,11 +1523,18 @@
 	async function persistCurrentReadingProgress(
 		targetBook: EpubBook | null = book
 	): Promise<boolean> {
+		// Read this before any await. Opening a new book clears readerReady
+		// immediately after scheduling a save for the previous book.
+		const commitLivePosition = readerReady;
 		if (!hasReadingProgressCapability()) {
 			await flushEpubPendingProgress(storageService);
 			return false;
 		}
 		if (!targetBook?.id) {
+			await flushEpubPendingProgress(storageService);
+			return false;
+		}
+		if (!commitLivePosition) {
 			await flushEpubPendingProgress(storageService);
 			return false;
 		}
@@ -2642,8 +2599,6 @@
 
 	function openReadingReferencePointMenu(event: MouseEvent | KeyboardEvent) {
 		const canUseReference = hasReadingReferenceCapability();
-		const canUseProgress = hasReadingProgressCapability();
-		const autoSaveEnabled = getContinuousReadingPositionAutoSaveConfig().enabled;
 		const menu = new Menu();
 
 		if (canUseReference && readingReferencePoint) {
@@ -2695,30 +2650,8 @@
 					openPremiumFeaturePreview(PREMIUM_FEATURES.EPUB_READING_REFERENCE);
 				});
 			});
-		}
-
-		if (canUseReference || isPremiumFeaturePreviewEnabled()) {
-			menu.addSeparator();
-		}
-
-		if (canUseProgress) {
-			menu.addItem((item) => {
-				item.setTitle(t('epub.reader.readingPositionAutoSaveMenu'));
-				item.setIcon(autoSaveEnabled ? 'locate-fixed' : 'map-pinned');
-				item.setChecked(autoSaveEnabled);
-				item.onClick(() => {
-					void (async () => {
-						const nextEnabled = !getContinuousReadingPositionAutoSaveConfig().enabled;
-						await setContinuousReadingPositionAutoSaveEnabled(nextEnabled);
-						onReadingPositionAutoSaveChange?.();
-						new Notice(
-							nextEnabled
-								? t('epub.reader.autoSaveEnabled')
-								: t('epub.reader.autoSaveDisabled')
-						);
-					})();
-				});
-			});
+		} else {
+			return;
 		}
 
 		showMenuAtAnchor(menu, event);
@@ -5411,12 +5344,6 @@
 			showPremiumFeaturePreview: openPremiumFeaturePreview,
 			saveReadingReferencePoint: hasReadingReferenceCapability() ? saveReadingReferencePoint : undefined,
 			openReadingPositionMenu: openReadingReferencePointMenu,
-			getReadingPositionAutoSaveEnabled: hasReadingProgressCapability()
-				? () => getContinuousReadingPositionAutoSaveConfig().enabled
-				: undefined,
-			setReadingPositionAutoSaveEnabled: hasReadingProgressCapability()
-				? setContinuousReadingPositionAutoSaveEnabled
-				: undefined,
 			bindCanvasPath: (canvasPath: string) => { bindCanvas(canvasPath); },
 			unbindCanvas: () => { unbindCanvas(); },
 			getCanvasService: () => canvasService,
@@ -5640,7 +5567,6 @@
 					{excerptSettings}
 					canUseReadingProgress={hasReadingProgressCapability()}
 					canUseExcerptNotes={hasExcerptNotesCapability()}
-					getReadingPositionAutoSaveConfig={getContinuousReadingPositionAutoSaveConfig}
 					isParagraphModeActive={() => settings.paragraphModeEnabled}
 					isParagraphModeProgressDetached={() => paragraphModeDetachedSession}
 					shouldSkipReadingProgressPersistOnRelocate={() =>

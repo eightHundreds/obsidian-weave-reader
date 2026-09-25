@@ -1,9 +1,4 @@
 import { Setting, ToggleComponent } from "obsidian";
-import {
-	DEFAULT_CONTINUOUS_READING_POSITION_AUTO_SAVE_PAGES,
-	MAX_CONTINUOUS_READING_POSITION_AUTO_SAVE_PAGES,
-	MIN_CONTINUOUS_READING_POSITION_AUTO_SAVE_PAGES,
-} from "../../config/reading-position-auto-save";
 import { isBuiltinTranslationEnabled } from "../../config/selection-translation-settings";
 import { BUILTIN_WEB_TRANSLATION_PROVIDERS } from "../../config/web-translation-providers";
 import { getEpubBacklinkHighlightService } from "../../services/epub/epub-backlink-highlight-access";
@@ -163,7 +158,6 @@ export function mountEpubBasicSettings(options: EpubBasicSettingsMountOptions): 
 	const { plugin, t, hosts, snapshot, callbacks } = options;
 	const cleanupFns: SettingsCleanupFn[] = [];
 
-	callbacks.setAutoSavePagesTextControl(null);
 	clearHosts(hosts);
 
 	new Setting(hosts.interface)
@@ -289,81 +283,6 @@ export function mountEpubBasicSettings(options: EpubBasicSettingsMountOptions): 
 		})();
 	});
 
-	const autoSaveSetting = new Setting(hosts.reading)
-		.setName(t("epub.settings.basic.autoSaveReadingPosition"))
-		.setDesc(t("epub.settings.basic.autoSaveReadingPositionDesc"))
-		.setClass("epub-reading-position-auto-save-toggle-setting");
-
-	autoSaveSetting.addToggle((toggle) => {
-		toggle.setValue(snapshot.continuousReadingPositionAutoSaveEnabled);
-		toggle.onChange(async (value) => {
-			await callbacks.updateContinuousReadingPositionAutoSaveEnabled(value);
-		});
-	});
-
-	const autoSavePagesSetting = new Setting(hosts.reading)
-		.setName(t("epub.settings.basic.autoSavePages"))
-		.setDesc(
-			t("epub.settings.basic.autoSavePagesDesc", {
-				min: MIN_CONTINUOUS_READING_POSITION_AUTO_SAVE_PAGES,
-				max: MAX_CONTINUOUS_READING_POSITION_AUTO_SAVE_PAGES,
-				default: DEFAULT_CONTINUOUS_READING_POSITION_AUTO_SAVE_PAGES,
-			})
-		)
-		.setClass("epub-reading-position-auto-save-pages-setting");
-
-	autoSavePagesSetting.addText((text) => {
-		callbacks.setAutoSavePagesTextControl(text);
-		text.inputEl.type = "number";
-		text.inputEl.min = String(MIN_CONTINUOUS_READING_POSITION_AUTO_SAVE_PAGES);
-		text.inputEl.max = String(MAX_CONTINUOUS_READING_POSITION_AUTO_SAVE_PAGES);
-		text.setPlaceholder(String(DEFAULT_CONTINUOUS_READING_POSITION_AUTO_SAVE_PAGES));
-		text.setValue(snapshot.continuousReadingPositionAutoSavePagesInput);
-		text.setDisabled(!snapshot.continuousReadingPositionAutoSaveEnabled);
-		text.onChange((value) => {
-			callbacks.setContinuousReadingPositionAutoSavePagesInput(value);
-		});
-
-		const inputEl = text.inputEl;
-
-		const commitValue = () => {
-			if (!snapshot.continuousReadingPositionAutoSaveEnabled) {
-				callbacks.setContinuousReadingPositionAutoSavePagesInput(
-					String(snapshot.continuousReadingPositionAutoSavePages)
-				);
-				text.setValue(String(snapshot.continuousReadingPositionAutoSavePages));
-				return;
-			}
-			void callbacks.updateContinuousReadingPositionAutoSavePages(inputEl.value);
-		};
-
-		const handleBlur = () => {
-			commitValue();
-		};
-
-		const handleKeydown = (event: KeyboardEvent) => {
-			if (event.key === "Enter") {
-				event.preventDefault();
-				commitValue();
-				return;
-			}
-
-			if (event.key === "Escape") {
-				callbacks.setContinuousReadingPositionAutoSavePagesInput(
-					String(snapshot.continuousReadingPositionAutoSavePages)
-				);
-				text.setValue(String(snapshot.continuousReadingPositionAutoSavePages));
-				inputEl.blur();
-			}
-		};
-
-		inputEl.addEventListener("blur", handleBlur);
-		inputEl.addEventListener("keydown", handleKeydown);
-
-		cleanupFns.push(() => inputEl.removeEventListener("blur", handleBlur));
-		cleanupFns.push(() => inputEl.removeEventListener("keydown", handleKeydown));
-	});
-
 	for (const builtin of BUILTIN_WEB_TRANSLATION_PROVIDERS) {
 		const builtinEnabled = isBuiltinTranslationEnabled(
 			snapshot.selectionTranslationSettings,
@@ -428,7 +347,6 @@ export function mountEpubBasicSettings(options: EpubBasicSettingsMountOptions): 
 
 	return () => {
 		cleanupFns.forEach((cleanup) => cleanup());
-		callbacks.setAutoSavePagesTextControl(null);
 		clearHosts(hosts);
 	};
 }
