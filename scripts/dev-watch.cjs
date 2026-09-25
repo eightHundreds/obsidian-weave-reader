@@ -99,7 +99,7 @@ if (existingLock?.pid && existingLock.pid !== process.pid) {
 		if (existingLock.pluginId) {
 			console.log(`Plugin: ${existingLock.pluginId}`);
 		}
-		console.log("Run `npm run kill:vite:desktop` before restarting this project.");
+		console.log("Run `pnpm run kill:vite:desktop` before restarting this project.");
 		process.exit(0);
 	}
 

@@ -4,8 +4,8 @@ const path = require("path");
 
 const PROJECT_ROOT = path.resolve(__dirname, "..");
 
-function runNpm(args) {
-	const printable = `npm ${args.join(" ")}`;
+function runPnpm(args) {
+	const printable = `pnpm ${args.join(" ")}`;
 	console.log(`[ci-install] > ${printable}`);
 	execSync(printable, {
 		cwd: PROJECT_ROOT,
@@ -17,17 +17,17 @@ function runNpm(args) {
 function logEnvironment() {
 	console.log(`[ci-install] node ${process.version}`);
 	try {
-		const npmVersion = execSync("npm --version", {
+		const pnpmVersion = execSync("pnpm --version", {
 			cwd: PROJECT_ROOT,
 			encoding: "utf8",
 			stdio: ["ignore", "pipe", "pipe"],
 		}).trim();
-		console.log(`[ci-install] npm ${npmVersion}`);
+		console.log(`[ci-install] pnpm ${pnpmVersion}`);
 	} catch (error) {
-		console.warn("[ci-install] unable to read npm version", error.message);
+		console.warn("[ci-install] unable to read pnpm version", error.message);
 	}
 
-	for (const fileName of ["package.json", "package-lock.json", ".npmrc"]) {
+	for (const fileName of ["package.json", "pnpm-lock.yaml", ".npmrc"]) {
 		const filePath = path.join(PROJECT_ROOT, fileName);
 		console.log(
 			`[ci-install] ${fileName}: ${fs.existsSync(filePath) ? "present" : "missing"}`
@@ -43,31 +43,31 @@ function removeNodeModules() {
 	fs.rmSync(nodeModulesPath, { recursive: true, force: true });
 }
 
-function installWithCi() {
-	runNpm(["ci", "--no-audit", "--no-fund"]);
+function installFrozen() {
+	runPnpm(["install", "--frozen-lockfile"]);
 }
 
-function installWithNpmInstall() {
+function installUpdatingLockfile() {
 	removeNodeModules();
-	runNpm(["install", "--no-audit", "--no-fund"]);
+	runPnpm(["install"]);
 }
 
 function main() {
 	logEnvironment();
 
 	try {
-		installWithCi();
-		console.log("[ci-install] npm ci succeeded");
+		installFrozen();
+		console.log("[ci-install] pnpm install --frozen-lockfile succeeded");
 		return;
 	} catch {
-		console.error("[ci-install] npm ci failed; retrying with npm install");
+		console.error("[ci-install] frozen install failed; retrying with pnpm install");
 	}
 
 	try {
-		installWithNpmInstall();
-		console.log("[ci-install] npm install succeeded");
+		installUpdatingLockfile();
+		console.log("[ci-install] pnpm install succeeded");
 	} catch {
-		console.error("[ci-install] dependency install failed after npm ci and npm install");
+		console.error("[ci-install] dependency install failed after frozen install and pnpm install");
 		process.exit(1);
 	}
 }

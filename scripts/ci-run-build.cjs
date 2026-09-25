@@ -26,7 +26,7 @@ function verifyFoliatePatch() {
 function main() {
 	console.log(`[ci-build] node ${process.version}`);
 	verifyFoliatePatch();
-	execSync("npm run build", {
+	execSync("pnpm run build", {
 		cwd: PROJECT_ROOT,
 		stdio: "inherit",
 		env: process.env,

@@ -7,15 +7,15 @@
   "type": "module",
   "scripts": {
     "dev": "cmd /c \"set WEAVE_EPUB_STANDALONE=1&& node scripts/dev-watch.cjs\"",
-    "dev:fresh": "npm run clean:cache && npm run dev",
+    "dev:fresh": "pnpm run clean:cache && pnpm run dev",
     "predev:mobile": "node scripts/kill-vite.cjs --target=mobile",
     "predev:mobile:watch": "node scripts/kill-vite.cjs --target=mobile",
     "kill:vite": "node scripts/kill-vite.cjs",
     "kill:vite:desktop": "node scripts/kill-vite.cjs --target=desktop",
     "kill:vite:mobile": "node scripts/kill-vite.cjs --target=mobile",
-    "prebuild": "npm run clean:src-js-residue:apply && node scripts/kill-vite.cjs",
-    "build": "npm run check:encoding && node --max-old-space-size=4096 node_modules/vite/bin/vite.js build --mode production",
-    "build:mobile": "npm run build && node scripts/deploy-mobile.cjs",
+    "prebuild": "pnpm run clean:src-js-residue:apply && node scripts/kill-vite.cjs",
+    "build": "pnpm run check:encoding && node --max-old-space-size=4096 node_modules/vite/bin/vite.js build --mode production",
+    "build:mobile": "pnpm run build && node scripts/deploy-mobile.cjs",
     "deploy:mobile": "node scripts/deploy-mobile.cjs",
     "dev:mobile": "node scripts/dev-mobile.cjs",
     "dev:mobile:watch": "node scripts/watch-mobile.cjs",
@@ -24,18 +24,18 @@
     "verify:plugin-scope": "node scripts/verify-plugin-scope.cjs",
     "verify:public-repo": "node scripts/verify-public-repo-safety.cjs",
     "postinstall": "node scripts/patch-foliate-paginator.mjs",
-    "i18n:export-keys": "npx tsx scripts/export-i18n-keys.ts",
-    "i18n:export-zh-snapshot": "npx tsx scripts/export-zh-snapshot.ts",
-    "i18n:validate": "npx tsx scripts/i18n-validate.ts",
-    "i18n:build-overlays": "npm run i18n:export-zh-snapshot && python scripts/build-quality-overlays.py",
-    "i18n:build-zh-tw": "npm run i18n:export-zh-snapshot && python scripts/build-zh-tw-overlay.py",
-    "i18n:export-tutorial": "npx tsx scripts/export-tutorial-en.ts && npx tsx scripts/export-tutorial-zh.ts",
+    "i18n:export-keys": "tsx scripts/export-i18n-keys.ts",
+    "i18n:export-zh-snapshot": "tsx scripts/export-zh-snapshot.ts",
+    "i18n:validate": "tsx scripts/i18n-validate.ts",
+    "i18n:build-overlays": "pnpm run i18n:export-zh-snapshot && python scripts/build-quality-overlays.py",
+    "i18n:build-zh-tw": "pnpm run i18n:export-zh-snapshot && python scripts/build-zh-tw-overlay.py",
+    "i18n:export-tutorial": "tsx scripts/export-tutorial-en.ts && tsx scripts/export-tutorial-zh.ts",
     "i18n:draft:complete-ko": "python scripts/complete-ko-offline.py",
     "i18n:draft:generate-locales": "node scripts/generate-ja-ko-locales.mjs",
     "i18n:draft:generate-tutorial": "python scripts/generate-tutorial-locales.py",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "npm run check:src-js-residue && npm run build && npm run check:bundle-footprint && npm run verify:plugin-scope",
+    "check": "pnpm run check:src-js-residue && pnpm run build && pnpm run check:bundle-footprint && pnpm run verify:plugin-scope",
     "check:bundle-footprint": "node scripts/check-bundle-footprint.cjs",
     "check:encoding": "node scripts/check-mojibake.cjs",
     "check:encoding:baseline": "node scripts/check-mojibake.cjs --write-baseline",
@@ -51,16 +51,16 @@
     "lint:obsidian": "node scripts/run-obsidian-lint.cjs",
     "lint:obsidian:strict": "node scripts/lint-obsidian-strict.cjs",
     "lint:obsidian:community": "node scripts/lint-community-audit.cjs",
-    "verify:obsidian-community": "npm run lint:obsidian && npm run lint:obsidian:strict",
-    "verify:community": "npm run verify:obsidian-community && npm run lint:obsidian:community && npm test && npm run build",
+    "verify:obsidian-community": "pnpm run lint:obsidian && pnpm run lint:obsidian:strict",
+    "verify:community": "pnpm run verify:obsidian-community && pnpm run lint:obsidian:community && pnpm test && pnpm run build",
     "sync:obsidian-version": "node scripts/sync-obsidian-community-version.cjs",
-    "lint:promises": "npm run lint:obsidian",
+    "lint:promises": "pnpm run lint:obsidian",
     "lint:svelte5": "svelte-check --tsconfig ./tsconfig.json",
     "clean": "rimraf dist node_modules/.vite*",
     "clean:cache": "node scripts/clean-cache.cjs",
     "clean:console": "node scripts/clean-console-logs.js",
     "clean:console:dry": "node scripts/clean-console-logs.js --dry-run",
-    "reinstall": "npm run clean && npm install"
+    "reinstall": "pnpm run clean && pnpm install"
   },
   "keywords": [
     "obsidian",
@@ -75,6 +75,7 @@
   ],
   "author": "Weave Team",
   "license": "GPL-3.0-or-later",
+  "packageManager": "pnpm@10.33.0",
   "devDependencies": {
     "@biomejs/biome": "1.3.3",
     "@codemirror/autocomplete": "6.18.6",
@@ -103,6 +104,7 @@
     "svelte": "^5.0.0",
     "svelte-check": "^4.0.0",
     "tslib": "^2.6.2",
+    "tsx": "4.20.6",
     "typescript": "^5.2.2",
     "typescript-eslint": "8.57.2",
     "unocss": "^0.57.2",
@@ -127,8 +129,14 @@
     "nunjucks": "3.2.4",
     "pako": "^2.1.0"
   },
-  "overrides": {
-    "picomatch@2": "2.3.2",
-    "picomatch@4": "4.0.4"
+  "pnpm": {
+    "overrides": {
+      "picomatch@2": "2.3.2",
+      "picomatch@4": "4.0.4"
+    },
+    "onlyBuiltDependencies": [
+      "@biomejs/biome",
+      "esbuild"
+    ]
   }
 }

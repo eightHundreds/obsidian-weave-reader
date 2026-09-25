@@ -28,18 +28,21 @@ jobs:
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', github.event.inputs.tag) || github.ref }}
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
+          cache: pnpm
 
       - name: Install dependencies
         run: node scripts/ci-install-dependencies.cjs
 
       - name: Verify public repo safety
         if: github.event_name != 'workflow_dispatch'
-        run: npm run verify:public-repo
+        run: pnpm run verify:public-repo
 
       - name: Read release version
         id: version
@@ -71,10 +74,10 @@ jobs:
           node -e "const versions=require('./versions.json'); const version=process.argv[1]; if (!versions[version]) { console.error('versions.json missing version ' + version); process.exit(1); }" "$TAG_VERSION"
 
       - name: Verify Obsidian community compliance
-        run: npm run verify:obsidian-community
+        run: pnpm run verify:obsidian-community
 
       - name: Run unit tests
-        run: npm test
+        run: pnpm test
 
       - name: Prepare release notes
         id: notes
@@ -102,10 +105,10 @@ jobs:
           echo "path=/tmp/release-notes.md" >> "$GITHUB_OUTPUT"
 
       - name: Build plugin
-        run: npm run build
+        run: pnpm run build
 
       - name: Verify release assets
-        run: npm run verify:release
+        run: pnpm run verify:release
 
       - name: Verify bundle has no dynamic script injection
         run: node scripts/verify-no-dynamic-script.cjs dist/main.js

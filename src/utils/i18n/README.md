@@ -18,18 +18,18 @@
 2. Auto mode fallback chain: Obsidian API → Obsidian `language` localStorage → browser locale → `en-US`
 3. Obsidian `ru` maps to `ru-RU` in `mapObsidianLocaleToPluginLanguage`
 
-Curated overlays cover essentially all user-facing `views.*` / `epub.*` strings (reader menus, bookshelf, sidebars, toolbars, settings). Add or revise copy under `scripts/curated-overlay-data/manual-*.json`, then run `npm run i18n:build-overlays`.
+Curated overlays cover essentially all user-facing `views.*` / `epub.*` strings (reader menus, bookshelf, sidebars, toolbars, settings). Add or revise copy under `scripts/curated-overlay-data/manual-*.json`, then run `pnpm run i18n:build-overlays`.
 
 ## Adding or changing UI copy
 
 1. Update `resources/epub.ts` (and `app-shell-epub.ts` if needed) for **zh-CN** and **en-US**.
-2. Run `npm run i18n:export-keys` to refresh `flat-locales/en-US.template.json`.
+2. Run `pnpm run i18n:export-keys` to refresh `flat-locales/en-US.template.json`.
 3. Add curated **ja** / **ko** / **ru** strings in:
    - `scripts/curated-overlay-data/manual-ja*.json`
    - `scripts/curated-overlay-data/manual-ko*.json`
    - `scripts/curated-overlay-data/manual-ru*.json`
-4. Run `npm run i18n:build-overlays` to regenerate `overlays/*.json`.
-5. Run `npm run i18n:validate`.
+4. Run `pnpm run i18n:build-overlays` to regenerate `overlays/*.json`.
+5. Run `pnpm run i18n:validate`.
 
 Optional: legacy draft files under `flat-locales/ja-JP.json` may be consulted by the build script if present, but only entries that pass quality checks are kept.
 
@@ -37,7 +37,7 @@ Optional: legacy draft files under `flat-locales/ja-JP.json` may be consulted by
 
 Tutorial content lives in `src/components/epub/tutorial-locales/*.json` (`zh-CN`, `en-US`, `ja-JP`, `ko-KR`, `ru-RU`). Tab labels are in `epub-tutorial-content.ts`. The tutorial modal follows `currentLanguage` automatically.
 
-To refresh draft `ja` / `ko` / `ru` bodies from English: `npm run i18n:draft:generate-tutorial` (Argos MT — review before shipping). Prefer hand-editing the JSON files for production copy.
+To refresh draft `ja` / `ko` / `ru` bodies from English: `pnpm run i18n:draft:generate-tutorial` (Argos MT — review before shipping). Prefer hand-editing the JSON files for production copy.
 
 ## Scripts
 

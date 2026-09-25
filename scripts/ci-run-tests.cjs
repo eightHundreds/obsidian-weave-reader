@@ -31,7 +31,7 @@ function main() {
 
 	verifyFoliatePatch();
 
-	execSync("npx vitest run --reporter=verbose", {
+	execSync("pnpm exec vitest run --reporter=verbose", {
 		cwd: PROJECT_ROOT,
 		stdio: "inherit",
 		env: process.env,

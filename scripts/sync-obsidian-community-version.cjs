@@ -68,20 +68,6 @@ function writeJson(relativePath, value) {
 	fs.writeFileSync(path.join(PROJECT_ROOT, relativePath), `${JSON.stringify(value, null, 2)}\n`);
 }
 
-function syncPackageLockVersion(version) {
-	const lockPath = path.join(PROJECT_ROOT, "package-lock.json");
-	if (!fs.existsSync(lockPath)) {
-		return;
-	}
-
-	const lock = readJson("package-lock.json");
-	lock.version = version;
-	if (lock.packages?.[""]) {
-		lock.packages[""].version = version;
-	}
-	writeJson("package-lock.json", lock);
-}
-
 function resolveTargetVersion(explicitVersion) {
 	if (explicitVersion) {
 		if (!/^\d+\.\d+\.\d+$/.test(explicitVersion)) {
@@ -122,8 +108,6 @@ function ensureLocalVersionFiles(version) {
 		writeJson("package.json", packageJson);
 	}
 
-	syncPackageLockVersion(version);
-
 	ensureVersionsEntry(version);
 }
 
@@ -158,7 +142,7 @@ function main() {
 		console.log(`  - git stash push -u -m "${stashMessage}"`);
 		console.log(`  - git checkout -B ${SYNC_BRANCH} ${REMOTE}/${DEFAULT_BRANCH}`);
 		console.log(
-			"  - update manifest.json / package.json(version only) / package-lock.json(version only) / versions.json"
+			"  - update manifest.json / package.json(version only) / versions.json"
 		);
 		console.log(`  - git commit + git push ${REMOTE} ${SYNC_BRANCH}:${DEFAULT_BRANCH}`);
 		console.log(`  - git checkout ${previousBranch} && git stash pop`);
@@ -186,10 +170,7 @@ function main() {
 
 		writeJson("versions.json", metadata.versions);
 
-		// Keep package-lock root version aligned so remote `npm ci` does not fail after version-only sync.
-		syncPackageLockVersion(targetVersion);
-
-		run("git", ["add", "manifest.json", "package.json", "package-lock.json", "versions.json"]);
+		run("git", ["add", "manifest.json", "package.json", "versions.json"]);
 
 		const stagedDiff = runCapture("git", ["diff", "--cached", "--stat"]);
 		console.log(stagedDiff);

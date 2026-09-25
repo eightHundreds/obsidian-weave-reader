@@ -102,7 +102,7 @@ def main() -> None:
 	template = json.loads(TEMPLATE.read_text(encoding="utf-8"))
 	if not ZH_SNAPSHOT.exists():
 		raise SystemExit(
-			"Missing zh-CN.snapshot.json. Run: npm run i18n:export-zh-snapshot"
+			"Missing zh-CN.snapshot.json. Run: pnpm run i18n:export-zh-snapshot"
 		)
 	chinese_template = json.loads(ZH_SNAPSHOT.read_text(encoding="utf-8"))
 	OUT_DIR.mkdir(parents=True, exist_ok=True)

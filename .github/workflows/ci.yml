@@ -18,16 +18,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: pnpm
       
       - name: Install dependencies
         run: node scripts/ci-install-dependencies.cjs
       
       - name: Check code formatting
-        run: npm run format:check
+        run: pnpm run format:check
         continue-on-error: true
 
   # Job 2: Lint检查
@@ -38,32 +42,36 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: pnpm
       
       - name: Install dependencies
         run: node scripts/ci-install-dependencies.cjs
       
       - name: Run Obsidian community lint
-        run: npm run lint:obsidian
+        run: pnpm run lint:obsidian
         continue-on-error: false
 
       - name: Run Obsidian community review gate
-        run: npm run lint:obsidian:community
+        run: pnpm run lint:obsidian:community
         continue-on-error: false
 
       - name: Run Obsidian strict audit
-        run: npm run lint:obsidian:strict
+        run: pnpm run lint:obsidian:strict
         continue-on-error: false
 
       - name: Run linter
-        run: npm run lint:check
+        run: pnpm run lint:check
         continue-on-error: true
       
       - name: Check Svelte 5 Compliance
-        run: npm run lint:svelte5
+        run: pnpm run lint:svelte5
         continue-on-error: true
 
   # Job 3: TypeScript类型检查（关键）
@@ -74,16 +82,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: pnpm
       
       - name: Install dependencies
         run: node scripts/ci-install-dependencies.cjs
       
       - name: Run build check
-        run: npm run check
+        run: pnpm run check
         continue-on-error: false
 
   # Job 4: 单元测试
@@ -94,10 +106,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: pnpm
       
       - name: Install dependencies
         run: node scripts/ci-install-dependencies.cjs
@@ -117,16 +133,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: pnpm
       
       - name: Install dependencies
         run: node scripts/ci-install-dependencies.cjs
 
       - name: Verify public repo safety
-        run: npm run verify:public-repo
+        run: pnpm run verify:public-repo
         continue-on-error: false
       
       - name: Build project
@@ -134,11 +154,11 @@ jobs:
         continue-on-error: false
 
       - name: Verify release assets
-        run: npm run verify:release
+        run: pnpm run verify:release
         continue-on-error: false
 
       - name: Check bundle footprint
-        run: npm run check:bundle-footprint
+        run: pnpm run check:bundle-footprint
         continue-on-error: false
       
       - name: Check build size

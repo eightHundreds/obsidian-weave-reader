@@ -28,7 +28,7 @@
 - [ ] Self-review of code completed
 - [ ] Comments added for complex logic
 - [ ] No new warnings generated
-- [ ] `npm run verify:obsidian-community` passed (0 errors + 0 strict warnings)
+- [ ] `pnpm run verify:obsidian-community` passed (0 errors + 0 strict warnings)
 - [ ] DOM type checks use `domInstanceOf` (not bare `instanceof` or `.instanceOf()`)
 
 ### Testing
@@ -52,7 +52,7 @@
 
 **Test Configuration:**
 - Node version: 
-- npm version: 
+- pnpm version: 
 - OS: 
 
 **Test Results:**
@@ -87,7 +87,7 @@
 <!-- PR合并前必须满足 -->
 
 - [ ] CI Pipeline passing (includes Obsidian community + strict lint)
-- [ ] `npm run verify:community` passed locally if touching `src/` or `manifest.json`
+- [ ] `pnpm run verify:community` passed locally if touching `src/` or `manifest.json`
 - [ ] Code reviewed and approved
 - [ ] No merge conflicts
 - [ ] Branch up-to-date with base branch

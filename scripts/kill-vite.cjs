@@ -40,8 +40,8 @@ function printHelp() {
 
 Stops hot-reload watcher processes recorded in lock files for this project only.
 
-  --target=desktop   Stop only desktop dev watcher (npm run dev)
-  --target=mobile    Stop only mobile watch (npm run dev:mobile:watch)
+  --target=desktop   Stop only desktop dev watcher (pnpm run dev)
+  --target=mobile    Stop only mobile watch (pnpm run dev:mobile:watch)
   --target=all       Stop both (default; used before production build)
 
 Aliases: --desktop-only, --mobile-only, --all`);

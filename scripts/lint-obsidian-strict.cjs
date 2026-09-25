@@ -6,7 +6,7 @@
  * 用来尽量提前发现官方机器人之外、但会影响审查体验的问题。
  *
  * 运行：
- *   npm run lint:obsidian:strict
+ *   pnpm run lint:obsidian:strict
  */
 
 const { ESLint } = require("eslint");
@@ -103,7 +103,7 @@ async function main() {
 
   console.log(`\nStrict audit summary: ${summary.errors} error(s), ${summary.warnings} warning(s).`);
   if (!verbose) {
-    console.log('Use "npm run lint:obsidian:strict -- --verbose" to inspect every warning.');
+    console.log('Use "pnpm run lint:obsidian:strict -- --verbose" to inspect every warning.');
   }
 
   process.exit(summary.errors > 0 || summary.warnings > 0 ? 1 : 0);

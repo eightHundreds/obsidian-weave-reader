@@ -37,7 +37,7 @@ function readBaseline() {
 
 function main() {
 	if (!fs.existsSync(bundlePath)) {
-		fail("dist/main.js not found. Run `npm run build` first.");
+		fail("dist/main.js not found. Run `pnpm run build` first.");
 	}
 
 	const bundle = fs.readFileSync(bundlePath, "utf8");
