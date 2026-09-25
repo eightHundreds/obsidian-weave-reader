@@ -3,7 +3,6 @@ import { normalizePath } from "obsidian";
 export interface EpubBookshelfMembershipEntry {
 	path: string;
 	addedAt: number;
-	customCoverPath?: string;
 }
 
 export function normalizeBookshelfMembershipEntries(value: unknown): EpubBookshelfMembershipEntry[] {
@@ -18,10 +17,6 @@ export function normalizeBookshelfMembershipEntries(value: unknown): EpubBookshe
 		.map((entry) => ({
 			path: normalizePath(String(entry.path || "").trim()),
 			addedAt: typeof entry.addedAt === "number" ? entry.addedAt : 0,
-			customCoverPath:
-				typeof entry.customCoverPath === "string" && entry.customCoverPath.trim()
-					? normalizePath(entry.customCoverPath.trim())
-					: undefined,
 		}))
 		.filter((entry) => Boolean(entry.path));
 }
@@ -39,7 +34,6 @@ export function dedupeBookshelfMembershipEntries(
 		byPath.set(entry.path, {
 			path: entry.path,
 			addedAt: Math.min(existing.addedAt, entry.addedAt),
-			customCoverPath: existing.customCoverPath || entry.customCoverPath,
 		});
 	}
 	return Array.from(byPath.values()).sort(

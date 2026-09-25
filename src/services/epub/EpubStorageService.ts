@@ -87,8 +87,6 @@ import {
 } from "./epub-bookshelf-playlist-store";
 import { peelEmbeddedScanIndexFromUnifiedData } from "./epub-unified-local-data-read";
 import {
-	normalizeTocChapterMarkKey,
-	normalizeTocChapterMarkMap,
 	type EpubTocChapterMark,
 	type EpubTocChapterMarkMap,
 } from "./epub-toc-chapter-mark";
@@ -374,14 +372,6 @@ export class EpubStorageService {
 
 	private getLegacyLastOpenBookmarkPath(bookId: string): string {
 		return `${this.basePath}/${bookId}/last-open-bookmark.json`;
-	}
-
-	private getConcealedTextsPath(bookId: string): string {
-		return normalizePath(`${this.getLocalReaderArtifactsRoot()}/${bookId}/concealed-texts.json`);
-	}
-
-	private getLegacyConcealedTextsPath(bookId: string): string {
-		return `${this.basePath}/${bookId}/concealed-texts.json`;
 	}
 
 	private getLegacyEpubBasePaths(): string[] {
@@ -1236,18 +1226,11 @@ export class EpubStorageService {
 			incoming.lastOpenBookmark && incomingSavedAt >= existingSavedAt
 				? incoming.lastOpenBookmark
 				: existing.lastOpenBookmark || incoming.lastOpenBookmark;
-		const preferredConcealedTexts =
-			(existing.concealedTexts || []).length >= (incoming.concealedTexts || []).length
-				? existing.concealedTexts || incoming.concealedTexts
-				: incoming.concealedTexts;
 
 		return {
 			descriptor: incoming.descriptor || existing.descriptor,
 			state: preferredState,
 			lastOpenBookmark: preferredLastOpen,
-			readingReferencePoint:
-				existing.readingReferencePoint || incoming.readingReferencePoint,
-			concealedTexts: preferredConcealedTexts,
 		};
 	}
 
@@ -1516,23 +1499,6 @@ export class EpubStorageService {
 				continue;
 			}
 			return this.normalizeLastOpenBookmark(parsed);
-		}
-
-		return null;
-	}
-
-	private async readLegacyConcealedTexts(bookId: string): Promise<ConcealedText[] | null> {
-		for (const concealedTextsPath of [
-			this.getConcealedTextsPath(bookId),
-			...this.getLegacyEpubBasePaths().map(
-				(basePath) => `${basePath}/${bookId}/concealed-texts.json`
-			),
-		]) {
-			const parsed = await this.readJsonObjectFromPath(concealedTextsPath);
-			if (parsed == null) {
-				continue;
-			}
-			return this.normalizeConcealedTexts(parsed);
 		}
 
 		return null;
@@ -2859,6 +2825,7 @@ export class EpubStorageService {
 			return [];
 		}
 
+		const coverByBookPath = await this.getBookmarkService().readCustomCoverPathsByBookPath();
 		const scanEntries = await this.loadScanIndex();
 		const scanEntryMap = new Map(scanEntries.map((entry) => [entry.path, entry] as const));
 		const synthesizedEntries: EpubScanIndexEntry[] = [];
@@ -2894,7 +2861,7 @@ export class EpubStorageService {
 					...this.toBookshelfIndexEntry(
 						scanEntry,
 						membershipEntry.addedAt,
-						membershipEntry.customCoverPath
+						coverByBookPath.get(activePath) || coverByBookPath.get(membershipEntry.path)
 					),
 					path: activePath,
 				};
@@ -3227,24 +3194,7 @@ export class EpubStorageService {
 				updated += 1;
 			}
 
-			const customCoverPath = entry.customCoverPath || "";
-			if (!customCoverPath) {
-				return nextEntry;
-			}
-
-			const remappedCoverPath = this.remapPath(customCoverPath, oldPath, newPath);
-			if (!remappedCoverPath || remappedCoverPath === customCoverPath) {
-				return nextEntry;
-			}
-
-			changed = true;
-			if (nextEntry === entry) {
-				updated += 1;
-			}
-			return {
-				...nextEntry,
-				customCoverPath: remappedCoverPath,
-			};
+			return nextEntry;
 		});
 
 		if (changed) {
@@ -3310,6 +3260,7 @@ export class EpubStorageService {
 		);
 		await this.updateBookshelfPlaylistReferences(normalizedOldPath, normalizedNewPath);
 		await this.updateBookshelfIndexReferences(normalizedOldPath, normalizedNewPath);
+		await this.getBookmarkService().remapCanvasBindingPaths(normalizedOldPath, normalizedNewPath);
 		return membershipUpdated;
 	}
 
@@ -3320,19 +3271,54 @@ export class EpubStorageService {
 		}
 
 		const membership = await this.loadBookshelfMembership();
-		const entryIndex = membership.findIndex((entry) => entry.path === normalizedFilePath);
-		if (entryIndex < 0) {
+		if (!membership.some((entry) => entry.path === normalizedFilePath)) {
 			return false;
 		}
 
-		const normalizedCoverPath = coverPath ? normalizePath(coverPath) : "";
-		const nextMembership = [...membership];
-		nextMembership[entryIndex] = {
-			...membership[entryIndex],
-			customCoverPath: normalizedCoverPath || undefined,
-		};
-		await this.saveBookshelfMembership(nextMembership);
+		const book = await this.findCatalogBookByFilePath(normalizedFilePath);
+		await this.getBookmarkService().writeCustomCoverPathForBookPath(
+			normalizedFilePath,
+			book,
+			coverPath
+		);
 		return true;
+	}
+
+	async loadBookNotesExportAppendPath(bookFilePath: string): Promise<string | null> {
+		const normalizedFilePath = normalizePath(bookFilePath || "");
+		if (!normalizedFilePath) {
+			return null;
+		}
+		return await this.getBookmarkService().readNotesExportPathByBookPath(normalizedFilePath);
+	}
+
+	async saveBookNotesExportAppendPath(
+		bookFilePath: string,
+		appendPath: string | null
+	): Promise<void> {
+		const normalizedFilePath = normalizePath(bookFilePath || "");
+		if (!normalizedFilePath) {
+			return;
+		}
+		const book = await this.findCatalogBookByFilePath(normalizedFilePath);
+		await this.getBookmarkService().writeNotesExportPathForBookPath(
+			normalizedFilePath,
+			book,
+			appendPath
+		);
+	}
+
+	private async findCatalogBookByFilePath(filePath: string): Promise<EpubBook | null> {
+		const normalizedFilePath = normalizePath(filePath || "");
+		if (!normalizedFilePath) {
+			return null;
+		}
+		const books = await this.loadBooks({ hydrateStates: false });
+		return (
+			Object.values(books).find(
+				(book) => normalizePath(book.filePath || "") === normalizedFilePath
+			) || null
+		);
 	}
 
 	private async updateBookshelfIndexReferences(oldPath: string, newPath: string): Promise<number> {
@@ -3859,30 +3845,23 @@ export class EpubStorageService {
 
 	async loadConcealedTexts(bookId: string): Promise<ConcealedText[]> {
 		bookId = await this.resolveCanonicalBookId(bookId);
-		const unifiedData = await this.readUnifiedLocalReaderData();
-		const bookRecord = unifiedData.books?.[bookId];
-		if (
-			(await this.hasUnifiedLocalDataFile()) &&
-			bookRecord &&
-			Object.prototype.hasOwnProperty.call(bookRecord, "concealedTexts")
-		) {
-			return [...(bookRecord.concealedTexts || [])];
+		const book = await this.getBook(bookId);
+		if (!book) {
+			return [];
 		}
-
-		return (await this.readLegacyConcealedTexts(bookId)) ?? [];
+		return await this.getBookmarkService().readConcealedTexts(book);
 	}
 
 	async saveConcealedTexts(bookId: string, concealedTexts: ConcealedText[]): Promise<void> {
 		bookId = await this.resolveCanonicalBookId(bookId);
-		const normalizedConcealedTexts = this.normalizeConcealedTexts(concealedTexts);
-		await this.updateUnifiedLocalReaderData((localData) => {
-			localData.books = localData.books || {};
-			const current = localData.books[bookId] || {};
-			localData.books[bookId] = {
-				...current,
-				concealedTexts: normalizedConcealedTexts,
-			};
-		});
+		const book = await this.getBook(bookId);
+		if (!book) {
+			return;
+		}
+		await this.getBookmarkService().writeConcealedTexts(
+			book,
+			this.normalizeConcealedTexts(concealedTexts)
+		);
 	}
 
 	async addConcealedText(bookId: string, concealedText: ConcealedText): Promise<void> {
@@ -3985,39 +3964,32 @@ export class EpubStorageService {
 
 	async loadReadingReferencePoint(bookId: string): Promise<EpubReadingReferencePoint | null> {
 		bookId = await this.resolveCanonicalBookId(bookId);
-		const unifiedData = await this.readUnifiedLocalReaderData();
-		const bookRecord = unifiedData.books?.[bookId];
-		if (
-			(await this.hasUnifiedLocalDataFile()) &&
-			bookRecord &&
-			Object.prototype.hasOwnProperty.call(bookRecord, "readingReferencePoint")
-		) {
-			return bookRecord.readingReferencePoint ?? null;
+		const book = await this.getBook(bookId);
+		if (!book) {
+			return null;
 		}
-
-		return null;
+		return await this.getBookmarkService().readReadingReferencePoint(book);
 	}
 
 	async saveReadingReferencePoint(bookId: string, point: EpubReadingReferencePoint): Promise<void> {
 		bookId = await this.resolveCanonicalBookId(bookId);
-		await this.updateUnifiedLocalReaderData((localData) => {
-			localData.books = localData.books || {};
-			const current = localData.books[bookId] || {};
-			localData.books[bookId] = {
-				...current,
-				readingReferencePoint: this.normalizeReadingReferencePoint(point),
-			};
-		});
+		const book = await this.getBook(bookId);
+		if (!book) {
+			return;
+		}
+		await this.getBookmarkService().writeReadingReferencePoint(
+			book,
+			this.normalizeReadingReferencePoint(point)
+		);
 	}
 
 	async getTocChapterMarks(bookId: string): Promise<EpubTocChapterMarkMap> {
 		bookId = await this.resolveCanonicalBookId(bookId);
-		const unifiedData = await this.readUnifiedLocalReaderData();
-		const bookRecord = unifiedData.books?.[bookId];
-		if (!bookRecord?.tocChapterMarks) {
+		const book = await this.getBook(bookId);
+		if (!book) {
 			return {};
 		}
-		return { ...bookRecord.tocChapterMarks };
+		return await this.getBookmarkService().readTocChapterMarks(book);
 	}
 
 	async setTocChapterMark(
@@ -4026,28 +3998,11 @@ export class EpubStorageService {
 		mark: EpubTocChapterMark | null
 	): Promise<EpubTocChapterMarkMap> {
 		bookId = await this.resolveCanonicalBookId(bookId);
-		const hrefKey = normalizeTocChapterMarkKey(href);
-		if (!hrefKey) {
-			return this.getTocChapterMarks(bookId);
+		const book = await this.getBook(bookId);
+		if (!book) {
+			return {};
 		}
-
-		let nextMarks: EpubTocChapterMarkMap = {};
-		await this.updateUnifiedLocalReaderData((localData) => {
-			localData.books = localData.books || {};
-			const current = localData.books[bookId] || {};
-			const existing = normalizeTocChapterMarkMap(current.tocChapterMarks);
-			nextMarks = { ...existing };
-			if (mark) {
-				nextMarks[hrefKey] = mark;
-			} else {
-				delete nextMarks[hrefKey];
-			}
-			localData.books[bookId] = {
-				...current,
-				tocChapterMarks: Object.keys(nextMarks).length > 0 ? nextMarks : undefined,
-			};
-		});
-		return nextMarks;
+		return await this.getBookmarkService().setTocChapterMark(book, href, mark);
 	}
 
 	async loadTocChapterMarkSettings(): Promise<EpubTocChapterMarkSettings> {
@@ -4166,17 +4121,11 @@ export class EpubStorageService {
 
 	async deleteReadingReferencePoint(bookId: string): Promise<void> {
 		bookId = await this.resolveCanonicalBookId(bookId);
-		await this.updateUnifiedLocalReaderData((localData) => {
-			localData.books = localData.books || {};
-			const current = localData.books[bookId];
-			if (!current) {
-				return;
-			}
-			localData.books[bookId] = {
-				...current,
-				readingReferencePoint: null,
-			};
-		});
+		const book = await this.getBook(bookId);
+		if (!book) {
+			return;
+		}
+		await this.getBookmarkService().writeReadingReferencePoint(book, null);
 	}
 
 	async deleteLastOpenBookmark(bookId: string): Promise<void> {
@@ -4772,19 +4721,6 @@ export class EpubStorageService {
 				const legacyLastOpen = await this.readLegacyLastOpenBookmark(bookId);
 				if (legacyLastOpen) {
 					current.lastOpenBookmark = legacyLastOpen;
-					bookChanged = true;
-				}
-			}
-
-			const legacyConcealedTexts = await this.readLegacyConcealedTexts(bookId);
-			if (legacyConcealedTexts && legacyConcealedTexts.length > 0) {
-				const mergeResult = this.mergeArrayByKey(
-					current.concealedTexts,
-					legacyConcealedTexts,
-					(entry, index) => entry.id || `${entry.cfiRange || ""}:${entry.createdTime || 0}:${index}`
-				);
-				if (mergeResult.changed) {
-					current.concealedTexts = mergeResult.merged;
 					bookChanged = true;
 				}
 			}

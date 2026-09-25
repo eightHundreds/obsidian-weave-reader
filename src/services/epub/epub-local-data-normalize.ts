@@ -25,7 +25,6 @@ import type {
 	EpubSourceRegistryEntry,
 	EpubStoredBookDescriptor,
 } from "./epub-local-data-types";
-import { normalizeTocChapterMarkMap } from "./epub-toc-chapter-mark";
 import { normalizeTocChapterMarkSettings } from "./epub-toc-chapter-mark-settings";
 import {
 	DEFAULT_READER_SETTINGS,
@@ -347,17 +346,6 @@ export function normalizeLocalBookRecord(value: unknown): EpubReaderLocalBookRec
 	if (Object.prototype.hasOwnProperty.call(record, "lastOpenBookmark")) {
 		normalized.lastOpenBookmark = normalizeLastOpenBookmark(record.lastOpenBookmark);
 	}
-	if (Object.prototype.hasOwnProperty.call(record, "readingReferencePoint")) {
-		normalized.readingReferencePoint = normalizeReadingReferencePoint(
-			record.readingReferencePoint
-		);
-	}
-	if (Object.prototype.hasOwnProperty.call(record, "concealedTexts")) {
-		normalized.concealedTexts = normalizeConcealedTexts(record.concealedTexts);
-	}
-	if (Object.prototype.hasOwnProperty.call(record, "tocChapterMarks")) {
-		normalized.tocChapterMarks = normalizeTocChapterMarkMap(record.tocChapterMarks);
-	}
 	return normalized;
 }
 
@@ -507,11 +495,7 @@ export function normalizeLocalReaderData(value: unknown): EpubReaderLocalDataFil
 
 export function hasRetainedLocalBookData(record: EpubReaderLocalBookRecord): boolean {
 	return Boolean(
-		record.state ||
-			Object.prototype.hasOwnProperty.call(record, "lastOpenBookmark") ||
-			Object.prototype.hasOwnProperty.call(record, "readingReferencePoint") ||
-			Object.prototype.hasOwnProperty.call(record, "concealedTexts") ||
-			(record.tocChapterMarks && Object.keys(record.tocChapterMarks).length > 0)
+		record.state || Object.prototype.hasOwnProperty.call(record, "lastOpenBookmark")
 	);
 }
 

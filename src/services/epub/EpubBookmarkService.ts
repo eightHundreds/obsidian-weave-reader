@@ -35,7 +35,23 @@ import { deriveEpubBookmarkDisplayTitle } from "./epub-bookmark-display-title";
 import { ensureEpubBookmarkCoverPath } from "./epub-bookmark-cover";
 import { isPlainObject, normalizeReadingPaceStats } from "./reading-pace";
 import type { ReaderHighlightInput } from "./reader-engine-types";
-import type { EpubBook, ReadingPosition, ReadingStats } from "./types";
+import {
+	normalizeTocChapterMarkKey,
+	normalizeTocChapterMarkMap,
+	type EpubTocChapterMark,
+	type EpubTocChapterMarkMap,
+} from "./epub-toc-chapter-mark";
+import {
+	normalizeConcealedTexts,
+	normalizeReadingReferencePoint,
+} from "./epub-local-data-normalize";
+import type {
+	ConcealedText,
+	EpubBook,
+	EpubReadingReferencePoint,
+	ReadingPosition,
+	ReadingStats,
+} from "./types";
 import { errorPlainText, unknownPlainText } from "../../utils/unknown-plain-text";
 
 export {
@@ -105,6 +121,11 @@ interface EpubBookmarkFileFrontmatter {
 	translator?: string;
 	coverPath?: string;
 	canvasPath?: string;
+	customCoverPath?: string;
+	notesExportPath?: string;
+	readingReferencePoint?: EpubReadingReferencePoint;
+	concealedTexts?: ConcealedText[];
+	tocChapterMarks?: EpubTocChapterMarkMap;
 	wordCount?: number;
 	chapterCount?: number;
 	updatedAt: number;
@@ -247,9 +268,13 @@ export function buildLegacyEpubBookmarkTitleIdPrefix(title: string): string | nu
 	return `${titleSegment}--`;
 }
 
-function normalizeBookmarkCanvasPath(value: unknown): string | null {
+function normalizeBookmarkVaultPath(value: unknown): string | null {
 	const normalized = normalizePath(unknownPlainText(value).trim());
 	return normalized || null;
+}
+
+function normalizeBookmarkCanvasPath(value: unknown): string | null {
+	return normalizeBookmarkVaultPath(value);
 }
 
 function remapBookmarkCanvasPath(filePath: string, oldPath: string, newPath: string): string | null {
@@ -424,29 +449,11 @@ export class EpubBookmarkService {
 	async findBookmarkSnapshotByBookPath(
 		filePath: string
 	): Promise<EpubBookmarkFileFrontmatter | null> {
-		const normalizedPath = normalizePath(String(filePath || "").trim());
-		if (!normalizedPath) {
+		const bookmarkPath = await this.findBookmarkFilePathByBookPath(filePath);
+		if (!bookmarkPath) {
 			return null;
 		}
-
-		const folderPath = this.getBookmarkFolder();
-		for (const file of this.app.vault.getFiles()) {
-			if (
-				file.extension !== "md" ||
-				!this.isBookmarkFileInsideFolder(file.path, folderPath)
-			) {
-				continue;
-			}
-
-			const fileData = await this.readBookmarkFileByPath(file.path);
-			if (!fileData || normalizePath(fileData.bookPath) !== normalizedPath) {
-				continue;
-			}
-
-			return fileData;
-		}
-
-		return null;
+		return await this.readBookmarkFileByPath(bookmarkPath);
 	}
 
 	async writeReadingState(
@@ -516,6 +523,120 @@ export class EpubBookmarkService {
 		});
 	}
 
+	async readReadingReferencePoint(book: EpubBook): Promise<EpubReadingReferencePoint | null> {
+		const fileData = await this.readBookmarkFileForBook(book);
+		return normalizeReadingReferencePoint(fileData?.readingReferencePoint);
+	}
+
+	async writeReadingReferencePoint(
+		book: EpubBook,
+		point: EpubReadingReferencePoint | null
+	): Promise<void> {
+		await this.updateBookmarkFrontmatter(book, (frontmatter) => {
+			const normalized = point ? normalizeReadingReferencePoint(point) : null;
+			if (normalized?.cfi) {
+				frontmatter.readingReferencePoint = normalized;
+			} else {
+				delete frontmatter.readingReferencePoint;
+			}
+		});
+	}
+
+	async readConcealedTexts(book: EpubBook): Promise<ConcealedText[]> {
+		const fileData = await this.readBookmarkFileForBook(book);
+		return normalizeConcealedTexts(fileData?.concealedTexts);
+	}
+
+	async writeConcealedTexts(book: EpubBook, concealedTexts: ConcealedText[]): Promise<void> {
+		await this.updateBookmarkFrontmatter(book, (frontmatter) => {
+			const normalized = normalizeConcealedTexts(concealedTexts);
+			if (normalized.length > 0) {
+				frontmatter.concealedTexts = normalized;
+			} else {
+				delete frontmatter.concealedTexts;
+			}
+		});
+	}
+
+	async readTocChapterMarks(book: EpubBook): Promise<EpubTocChapterMarkMap> {
+		const fileData = await this.readBookmarkFileForBook(book);
+		return normalizeTocChapterMarkMap(fileData?.tocChapterMarks);
+	}
+
+	async setTocChapterMark(
+		book: EpubBook,
+		href: string,
+		mark: EpubTocChapterMark | null
+	): Promise<EpubTocChapterMarkMap> {
+		const hrefKey = normalizeTocChapterMarkKey(href);
+		let nextMarks: EpubTocChapterMarkMap = {};
+		if (!hrefKey) {
+			return await this.readTocChapterMarks(book);
+		}
+		await this.updateBookmarkFrontmatter(book, (frontmatter) => {
+			nextMarks = { ...normalizeTocChapterMarkMap(frontmatter.tocChapterMarks) };
+			if (mark) {
+				nextMarks[hrefKey] = mark;
+			} else {
+				delete nextMarks[hrefKey];
+			}
+			if (Object.keys(nextMarks).length > 0) {
+				frontmatter.tocChapterMarks = nextMarks;
+			} else {
+				delete frontmatter.tocChapterMarks;
+			}
+		});
+		return nextMarks;
+	}
+
+	async readCustomCoverPathByBookPath(bookPath: string): Promise<string | null> {
+		const snapshot = await this.findBookmarkSnapshotByBookPath(bookPath);
+		return normalizeBookmarkVaultPath(snapshot?.customCoverPath);
+	}
+
+	async readCustomCoverPathsByBookPath(): Promise<Map<string, string>> {
+		const folderPath = this.getBookmarkFolder();
+		const covers = new Map<string, string>();
+		for (const file of this.app.vault.getFiles()) {
+			if (file.extension !== "md" || !this.isBookmarkFileInsideFolder(file.path, folderPath)) {
+				continue;
+			}
+			const fileData = await this.readBookmarkFileByPath(file.path);
+			const normalizedBookPath = normalizePath(String(fileData?.bookPath || "").trim());
+			const coverPath = normalizeBookmarkVaultPath(fileData?.customCoverPath);
+			if (!normalizedBookPath || !coverPath) {
+				continue;
+			}
+			covers.set(normalizedBookPath, coverPath);
+		}
+		return covers;
+	}
+
+	async writeCustomCoverPathForBookPath(
+		bookPath: string,
+		book: EpubBook | null,
+		coverPath: string | null
+	): Promise<void> {
+		await this.writeFrontmatterForBookPath(bookPath, book, (frontmatter) => {
+			this.assignVaultPathField(frontmatter, "customCoverPath", coverPath);
+		});
+	}
+
+	async readNotesExportPathByBookPath(bookPath: string): Promise<string | null> {
+		const snapshot = await this.findBookmarkSnapshotByBookPath(bookPath);
+		return normalizeBookmarkVaultPath(snapshot?.notesExportPath);
+	}
+
+	async writeNotesExportPathForBookPath(
+		bookPath: string,
+		book: EpubBook | null,
+		notesExportPath: string | null
+	): Promise<void> {
+		await this.writeFrontmatterForBookPath(bookPath, book, (frontmatter) => {
+			this.assignVaultPathField(frontmatter, "notesExportPath", notesExportPath);
+		});
+	}
+
 	async remapCanvasBindingPaths(oldPath: string, newPath: string): Promise<number> {
 		const normalizedOldPath = normalizePath(String(oldPath || "").trim());
 		const normalizedNewPath = normalizePath(String(newPath || "").trim());
@@ -533,15 +654,27 @@ export class EpubBookmarkService {
 
 		for (const file of candidates) {
 			const fileData = await this.readBookmarkFileByPath(file.path);
-			const currentPath = normalizeBookmarkCanvasPath(fileData?.canvasPath);
-			if (!fileData || !currentPath) {
+			if (!fileData) {
 				continue;
 			}
-			const remapped = remapBookmarkCanvasPath(currentPath, normalizedOldPath, normalizedNewPath);
-			if (!remapped || remapped === currentPath) {
+			const changed = [
+				this.remapFrontmatterVaultPath(fileData, "canvasPath", normalizedOldPath, normalizedNewPath),
+				this.remapFrontmatterVaultPath(
+					fileData,
+					"customCoverPath",
+					normalizedOldPath,
+					normalizedNewPath
+				),
+				this.remapFrontmatterVaultPath(
+					fileData,
+					"notesExportPath",
+					normalizedOldPath,
+					normalizedNewPath
+				),
+			].some(Boolean);
+			if (!changed) {
 				continue;
 			}
-			fileData.canvasPath = remapped;
 			fileData.updatedAt = Date.now();
 			await this.writeBookmarkFile(file.path, fileData);
 			updated += 1;
@@ -577,6 +710,115 @@ export class EpubBookmarkService {
 		}
 
 		return updated;
+	}
+
+	private async updateBookmarkFrontmatter(
+		book: EpubBook,
+		update: (frontmatter: EpubBookmarkFileFrontmatter) => void
+	): Promise<void> {
+		await this.runSerializedBookmarkMutation(book, async () => {
+			const filePath = await this.ensureCanonicalBookmarkFilePath(book);
+			const existing =
+				(await this.readBookmarkFileByPath(filePath)) || this.createEmptyFileFrontmatter(book);
+			const nextFrontmatter = this.mergeBookIdentity(existing, book);
+			update(nextFrontmatter);
+			nextFrontmatter.updatedAt = Date.now();
+			await this.writeBookmarkFile(filePath, nextFrontmatter);
+		});
+	}
+
+	private async writeFrontmatterForBookPath(
+		bookPath: string,
+		book: EpubBook | null,
+		update: (frontmatter: EpubBookmarkFileFrontmatter) => void
+	): Promise<void> {
+		const normalizedBookPath = normalizePath(String(bookPath || "").trim());
+		if (!normalizedBookPath) {
+			return;
+		}
+		if (book && normalizePath(String(book.filePath || "").trim()) === normalizedBookPath) {
+			await this.updateBookmarkFrontmatter(book, update);
+			return;
+		}
+		const existingPath = await this.findBookmarkFilePathByBookPath(normalizedBookPath);
+		if (existingPath) {
+			const existing = await this.readBookmarkFileByPath(existingPath);
+			if (!existing) {
+				return;
+			}
+			update(existing);
+			existing.updatedAt = Date.now();
+			await this.writeBookmarkFile(existingPath, existing);
+			return;
+		}
+		await this.updateBookmarkFrontmatter(this.createPathStubBook(normalizedBookPath), update);
+	}
+
+	private createPathStubBook(bookPath: string): EpubBook {
+		const normalizedBookPath = normalizePath(bookPath);
+		const title =
+			EpubLinkService.extractShortBookName(normalizedBookPath) || "EPUB";
+		return {
+			id: "",
+			filePath: normalizedBookPath,
+			metadata: {
+				title,
+				author: "",
+				chapterCount: 0,
+			},
+			currentPosition: { chapterIndex: 0, cfi: "", percent: 0 },
+			readingStats: { totalReadTime: 0, lastReadTime: 0, createdTime: 0 },
+		};
+	}
+
+	private assignVaultPathField(
+		frontmatter: EpubBookmarkFileFrontmatter,
+		field: "customCoverPath" | "notesExportPath",
+		value: string | null
+	): void {
+		const normalized = normalizeBookmarkVaultPath(value);
+		if (normalized) {
+			frontmatter[field] = normalized;
+		} else {
+			delete frontmatter[field];
+		}
+	}
+
+	private remapFrontmatterVaultPath(
+		frontmatter: EpubBookmarkFileFrontmatter,
+		field: "canvasPath" | "customCoverPath" | "notesExportPath",
+		oldPath: string,
+		newPath: string
+	): boolean {
+		const currentPath = normalizeBookmarkVaultPath(frontmatter[field]);
+		if (!currentPath) {
+			return false;
+		}
+		const remapped = remapBookmarkCanvasPath(currentPath, oldPath, newPath);
+		if (!remapped || remapped === currentPath) {
+			return false;
+		}
+		frontmatter[field] = remapped;
+		return true;
+	}
+
+	private async findBookmarkFilePathByBookPath(filePath: string): Promise<string | null> {
+		const normalizedPath = normalizePath(String(filePath || "").trim());
+		if (!normalizedPath) {
+			return null;
+		}
+		const folderPath = this.getBookmarkFolder();
+		for (const file of this.app.vault.getFiles()) {
+			if (file.extension !== "md" || !this.isBookmarkFileInsideFolder(file.path, folderPath)) {
+				continue;
+			}
+			const fileData = await this.readBookmarkFileByPath(file.path);
+			if (!fileData || normalizePath(fileData.bookPath) !== normalizedPath) {
+				continue;
+			}
+			return file.path;
+		}
+		return null;
 	}
 
 	private async readBookmarkFileForBook(
@@ -831,6 +1073,20 @@ export class EpubBookmarkService {
 				nextFrontmatter.readingState ?? existingPreferred.readingState;
 			nextFrontmatter.analytics = nextFrontmatter.analytics ?? existingPreferred.analytics;
 			nextFrontmatter.user = nextFrontmatter.user ?? existingPreferred.user;
+			nextFrontmatter.canvasPath = nextFrontmatter.canvasPath ?? existingPreferred.canvasPath;
+			nextFrontmatter.customCoverPath =
+				nextFrontmatter.customCoverPath ?? existingPreferred.customCoverPath;
+			nextFrontmatter.notesExportPath =
+				nextFrontmatter.notesExportPath ?? existingPreferred.notesExportPath;
+			nextFrontmatter.readingReferencePoint =
+				nextFrontmatter.readingReferencePoint ?? existingPreferred.readingReferencePoint;
+			nextFrontmatter.concealedTexts = nextFrontmatter.concealedTexts?.length
+				? nextFrontmatter.concealedTexts
+				: existingPreferred.concealedTexts;
+			nextFrontmatter.tocChapterMarks =
+				nextFrontmatter.tocChapterMarks && Object.keys(nextFrontmatter.tocChapterMarks).length > 0
+					? nextFrontmatter.tocChapterMarks
+					: existingPreferred.tocChapterMarks;
 		}
 
 		await this.writeBookmarkFile(normalizedPreferredPath, nextFrontmatter);
@@ -1116,6 +1372,11 @@ export class EpubBookmarkService {
 			translator: typeof value.translator === "string" ? value.translator : undefined,
 			coverPath: typeof value.coverPath === "string" ? value.coverPath : undefined,
 			canvasPath: normalizeBookmarkCanvasPath(value.canvasPath) || undefined,
+			customCoverPath: normalizeBookmarkVaultPath(value.customCoverPath) || undefined,
+			notesExportPath: normalizeBookmarkVaultPath(value.notesExportPath) || undefined,
+			readingReferencePoint: this.normalizeStoredReadingReferencePoint(value.readingReferencePoint),
+			concealedTexts: this.normalizeStoredConcealedTexts(value.concealedTexts),
+			tocChapterMarks: this.normalizeStoredTocChapterMarks(value.tocChapterMarks),
 			wordCount: typeof value.wordCount === "number" ? value.wordCount : undefined,
 			chapterCount: typeof value.chapterCount === "number" ? value.chapterCount : undefined,
 			updatedAt: typeof value.updatedAt === "number" ? value.updatedAt : 0,
@@ -1157,6 +1418,23 @@ export class EpubBookmarkService {
 			priority,
 			notes,
 		};
+	}
+
+	private normalizeStoredReadingReferencePoint(
+		value: unknown
+	): EpubReadingReferencePoint | undefined {
+		const point = normalizeReadingReferencePoint(value);
+		return point?.cfi ? point : undefined;
+	}
+
+	private normalizeStoredConcealedTexts(value: unknown): ConcealedText[] | undefined {
+		const texts = normalizeConcealedTexts(value);
+		return texts.length > 0 ? texts : undefined;
+	}
+
+	private normalizeStoredTocChapterMarks(value: unknown): EpubTocChapterMarkMap | undefined {
+		const marks = normalizeTocChapterMarkMap(value);
+		return Object.keys(marks).length > 0 ? marks : undefined;
 	}
 
 	private normalizeReadingState(value: unknown): EpubBookmarkReadingState | null {
@@ -1339,6 +1617,11 @@ export class EpubBookmarkService {
 				translator: frontmatter.translator,
 				coverPath: frontmatter.coverPath,
 				canvasPath: frontmatter.canvasPath,
+				customCoverPath: frontmatter.customCoverPath,
+				notesExportPath: frontmatter.notesExportPath,
+				readingReferencePoint: frontmatter.readingReferencePoint,
+				concealedTexts: frontmatter.concealedTexts,
+				tocChapterMarks: frontmatter.tocChapterMarks,
 				wordCount: frontmatter.wordCount,
 				chapterCount: frontmatter.chapterCount,
 				updatedAt: frontmatter.updatedAt,

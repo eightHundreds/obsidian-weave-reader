@@ -12,11 +12,12 @@ import type {
 import {
 	EPUB_BOOKMARK_FILE_FORMAT_V3,
 } from "./epub-bookmark-page-types";
-import type { ReadingStats } from "./types";
+import type { EpubTocChapterMarkMap } from "./epub-toc-chapter-mark";
+import type { ConcealedText, EpubReadingReferencePoint, ReadingStats } from "./types";
 import { unknownPlainText } from "../../utils/unknown-plain-text";
 
 export const EPUB_BOOKMARK_PAGE_MAINTENANCE_NOTE =
-	"> 📎 本页由 Weave EPUB 自动维护。YAML 中 `readingState`、`bookmarks`、`canvasPath` 请勿手改；`user` 与「我的标注」可自由编辑。";
+	"> 📎 本页由 Weave EPUB 自动维护。YAML 中 `readingState`、`bookmarks`、`canvasPath`、`customCoverPath`、`notesExportPath`、`readingReferencePoint`、`concealedTexts`、`tocChapterMarks` 请勿手改；`user` 与「我的标注」可自由编辑。";
 
 /** @deprecated Use EPUB_BOOKMARK_PAGE_MAINTENANCE_NOTE */
 export const EPUB_BOOKMARK_PAGE_CALLOUT = EPUB_BOOKMARK_PAGE_MAINTENANCE_NOTE;
@@ -51,6 +52,11 @@ export interface EpubBookmarkPageRenderInput {
 	translator?: string;
 	coverPath?: string;
 	canvasPath?: string;
+	customCoverPath?: string;
+	notesExportPath?: string;
+	readingReferencePoint?: EpubReadingReferencePoint;
+	concealedTexts?: ConcealedText[];
+	tocChapterMarks?: EpubTocChapterMarkMap;
 	wordCount?: number;
 	chapterCount?: number;
 	updatedAt: number;
@@ -160,6 +166,14 @@ function buildEpubBookmarkYamlPayload(
 		translator: input.translator,
 		coverPath: input.coverPath,
 		canvasPath: input.canvasPath || undefined,
+		customCoverPath: input.customCoverPath || undefined,
+		notesExportPath: input.notesExportPath || undefined,
+		readingReferencePoint: input.readingReferencePoint,
+		concealedTexts: input.concealedTexts?.length ? input.concealedTexts : undefined,
+		tocChapterMarks:
+			input.tocChapterMarks && Object.keys(input.tocChapterMarks).length > 0
+				? input.tocChapterMarks
+				: undefined,
 		wordCount: input.wordCount,
 		chapterCount: input.chapterCount,
 		...flat,
@@ -617,13 +631,18 @@ function stringifyYamlObject(value: Record<string, unknown>, indent = ""): strin
 	return lines.join("\n");
 }
 
+function formatYamlKey(key: string): string {
+	return /^[A-Za-z_][A-Za-z0-9_-]*$/.test(key) ? key : JSON.stringify(key);
+}
+
 function appendYamlProperty(lines: string[], key: string, value: unknown, indent: string): void {
+	const yamlKey = formatYamlKey(key);
 	if (Array.isArray(value)) {
 		if (value.length === 0) {
-			lines.push(`${indent}${key}: []`);
+			lines.push(`${indent}${yamlKey}: []`);
 			return;
 		}
-		lines.push(`${indent}${key}:`);
+		lines.push(`${indent}${yamlKey}:`);
 		for (const item of value) {
 			appendYamlArrayItem(lines, item, `${indent}  `);
 		}
@@ -634,16 +653,16 @@ function appendYamlProperty(lines: string[], key: string, value: unknown, indent
 			([, entry]) => entry !== undefined
 		);
 		if (entries.length === 0) {
-			lines.push(`${indent}${key}: {}`);
+			lines.push(`${indent}${yamlKey}: {}`);
 			return;
 		}
-		lines.push(`${indent}${key}:`);
+		lines.push(`${indent}${yamlKey}:`);
 		for (const [childKey, childValue] of entries) {
 			appendYamlProperty(lines, childKey, childValue, `${indent}  `);
 		}
 		return;
 	}
-	lines.push(`${indent}${key}: ${formatYamlScalar(value)}`);
+	lines.push(`${indent}${yamlKey}: ${formatYamlScalar(value)}`);
 }
 
 function appendYamlArrayItem(lines: string[], value: unknown, indent: string): void {
@@ -667,11 +686,12 @@ function appendYamlArrayItem(lines: string[], value: unknown, indent: string): v
 			return;
 		}
 		const [firstKey, firstValue] = entries[0];
+		const yamlKey = formatYamlKey(firstKey);
 		if (Array.isArray(firstValue) || (firstValue && typeof firstValue === "object")) {
-			lines.push(`${indent}- ${firstKey}:`);
+			lines.push(`${indent}- ${yamlKey}:`);
 			appendComplexYamlValue(lines, firstValue, `${indent}    `);
 		} else {
-			lines.push(`${indent}- ${firstKey}: ${formatYamlScalar(firstValue)}`);
+			lines.push(`${indent}- ${yamlKey}: ${formatYamlScalar(firstValue)}`);
 		}
 		for (const [key, entry] of entries.slice(1)) {
 			appendYamlProperty(lines, key, entry, `${indent}  `);

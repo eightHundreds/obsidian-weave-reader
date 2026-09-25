@@ -4,13 +4,10 @@ import type { EpubExcerptSettings } from "./epub-excerpt-settings";
 import type { EpubReaderSettingsDeviceKind } from "./reader-settings";
 import type {
 	BookMetadata,
-	ConcealedText,
 	EpubBook,
 	EpubLastOpenBookmark,
-	EpubReadingReferencePoint,
 	EpubReaderSettings,
 } from "./types";
-import type { EpubTocChapterMarkMap } from "./epub-toc-chapter-mark";
 import type { EpubTocChapterMarkSettings } from "./epub-toc-chapter-mark-settings";
 export interface EpubPluginUiMemory {
 	lastSelectedIRDeckId: string;
@@ -59,9 +56,6 @@ export interface EpubReaderLocalBookRecord {
 	descriptor?: EpubStoredBookDescriptor;
 	state?: Pick<EpubBook, "currentPosition" | "readingStats">;
 	lastOpenBookmark?: EpubLastOpenBookmark | null;
-	readingReferencePoint?: EpubReadingReferencePoint | null;
-	concealedTexts?: ConcealedText[];
-	tocChapterMarks?: EpubTocChapterMarkMap;
 }
 
 export interface CanvasExcerptAnchorRecord {
@@ -77,7 +71,6 @@ export interface EpubReaderLocalDataFile {
 	uiMemory?: EpubPluginUiMemory;
 	readerSettings?: Partial<Record<EpubReaderSettingsDeviceKind, EpubReaderSettings>>;
 	excerptSettings?: EpubExcerptSettings;
-	bookNotesExportAppendByBook?: Record<string, string>;
 	scanIndex?: EpubScanIndexEntry[];
 	bookshelfMembership?: EpubBookshelfMembershipEntry[];
 	bookshelfPlaylists?: EpubBookshelfPlaylist[];

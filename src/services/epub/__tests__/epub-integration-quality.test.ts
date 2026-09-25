@@ -462,10 +462,10 @@ describe("epub-bookshelf-membership-store", () => {
 	it("dedupes membership entries by path and keeps earliest addedAt", () => {
 		const deduped = dedupeBookshelfMembershipEntries([
 			{ path: "Books/a.epub", addedAt: 20 },
-			{ path: "Books/a.epub", addedAt: 10, customCoverPath: "Covers/a.png" },
+			{ path: "Books/a.epub", addedAt: 10 },
 		]);
 		expect(deduped).toEqual([
-			{ path: "Books/a.epub", addedAt: 10, customCoverPath: "Covers/a.png" },
+			{ path: "Books/a.epub", addedAt: 10 },
 		]);
 	});
 

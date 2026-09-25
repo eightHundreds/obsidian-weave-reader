@@ -115,7 +115,7 @@ export function parseEpubSourceInfo(content: string): {
 }
 
 export type YAMLScalar = string | number | boolean;
-export type YAMLValue = YAMLScalar | YAMLValue[];
+export type YAMLValue = YAMLScalar | YAMLValue[] | { [key: string]: YAMLValue | undefined };
 
 /**
  * YAML frontmatter 原始数据
@@ -202,59 +202,148 @@ export function parseYAMLFromContent(content: string): YAMLFrontmatter {
  * @returns 解析后的对象
  */
 function parseYAMLString(yaml: string): YAMLFrontmatter {
-	const result: YAMLFrontmatter = {};
-	const lines = yaml.split(/\r?\n/);
-
-	let currentKey: string | null = null;
-	let currentArray: string[] | null = null;
-
-	for (let i = 0; i < lines.length; i++) {
-		const line = lines[i];
+	const lines = yaml.split(/\r?\n/).filter((line) => {
 		const trimmed = line.trim();
-
-		// 跳过空行和注释
-		if (!trimmed || trimmed.startsWith("#")) {
-			continue;
-		}
-
-		// 检测数组项（以 - 开头，前面有缩进）
-		if (line.match(/^\s+-\s/) && currentKey && currentArray) {
-			const arrayItemMatch = trimmed.match(/^-\s+(.*)$/);
-			if (arrayItemMatch) {
-				let value = arrayItemMatch[1].trim();
-				value = unquoteString(value);
-				currentArray.push(value);
-			}
-			continue;
-		}
-
-		// 检测键值对
-		const colonIndex = trimmed.indexOf(":");
-		if (colonIndex === -1) {
-			continue;
-		}
-
-		const key = trimmed.substring(0, colonIndex).trim();
-		const value = trimmed.substring(colonIndex + 1).trim();
-
-		// 如果值为空，检查下一行是否是数组
-		if (!value) {
-			// 可能是数组开始
-			currentKey = key;
-			currentArray = [];
-			result[key] = currentArray;
-			continue;
-		}
-
-		// 重置数组状态
-		currentKey = null;
-		currentArray = null;
-
-		// 解析值
-		result[key] = parseYAMLValue(value);
+		return Boolean(trimmed) && !trimmed.startsWith("#");
+	});
+	const [value] = parseYamlNode(lines, 0, 0);
+	if (value && typeof value === "object" && !Array.isArray(value)) {
+		return value as YAMLFrontmatter;
 	}
+	return {};
+}
 
-	return result;
+function yamlIndent(line: string): number {
+	return line.match(/^ */)?.[0].length ?? 0;
+}
+
+function splitYamlKeyValue(trimmed: string): { key: string; value: string } | null {
+	const quotedKey = trimmed.match(/^(?:"((?:\\.|[^"])*)"|'((?:\\.|[^'])*)')\s*:(.*)$/);
+	if (quotedKey) {
+		return {
+			key: unquoteString(quotedKey[1] != null ? `"${quotedKey[1]}"` : `'${quotedKey[2]}'`),
+			value: quotedKey[3].trim(),
+		};
+	}
+	const colonIndex = trimmed.indexOf(":");
+	if (colonIndex <= 0) {
+		return null;
+	}
+	return {
+		key: trimmed.slice(0, colonIndex).trim(),
+		value: trimmed.slice(colonIndex + 1).trim(),
+	};
+}
+
+function parseYamlNode(lines: string[], start: number, indent: number): [YAMLValue, number] {
+	if (start >= lines.length) {
+		return [{}, start];
+	}
+	const first = lines[start].trim();
+	if (first.startsWith("- ") || first === "-") {
+		return parseYamlArray(lines, start, indent);
+	}
+	return parseYamlObject(lines, start, indent);
+}
+
+function parseYamlObject(lines: string[], start: number, indent: number): [YAMLFrontmatter, number] {
+	const result: YAMLFrontmatter = {};
+	let index = start;
+	while (index < lines.length) {
+		const line = lines[index];
+		if (yamlIndent(line) < indent) {
+			break;
+		}
+		if (yamlIndent(line) > indent) {
+			index += 1;
+			continue;
+		}
+		const trimmed = line.trim();
+		if (trimmed.startsWith("- ") || trimmed === "-") {
+			break;
+		}
+		const pair = splitYamlKeyValue(trimmed);
+		if (!pair) {
+			index += 1;
+			continue;
+		}
+		if (!pair.value) {
+			const next = lines[index + 1];
+			if (next && yamlIndent(next) > indent) {
+				const [child, nextIndex] = parseYamlNode(lines, index + 1, yamlIndent(next));
+				result[pair.key] = child;
+				index = nextIndex;
+				continue;
+			}
+			result[pair.key] = {};
+			index += 1;
+			continue;
+		}
+		result[pair.key] = parseYAMLValue(pair.value);
+		index += 1;
+	}
+	return [result, index];
+}
+
+function parseYamlArray(lines: string[], start: number, indent: number): [YAMLValue[], number] {
+	const items: YAMLValue[] = [];
+	let index = start;
+	while (index < lines.length) {
+		const line = lines[index];
+		if (yamlIndent(line) < indent) {
+			break;
+		}
+		if (yamlIndent(line) > indent) {
+			index += 1;
+			continue;
+		}
+		const trimmed = line.trim();
+		if (!trimmed.startsWith("- ") && trimmed !== "-") {
+			break;
+		}
+		const rest = trimmed === "-" ? "" : trimmed.slice(2).trim();
+		if (!rest) {
+			const next = lines[index + 1];
+			if (next && yamlIndent(next) > indent) {
+				const [child, nextIndex] = parseYamlNode(lines, index + 1, yamlIndent(next));
+				items.push(child);
+				index = nextIndex;
+				continue;
+			}
+			items.push("");
+			index += 1;
+			continue;
+		}
+		const pair = splitYamlKeyValue(rest);
+		if (pair) {
+			const item: YAMLFrontmatter = {};
+			if (!pair.value) {
+				const next = lines[index + 1];
+				if (next && yamlIndent(next) > yamlIndent(line)) {
+					const [child, nextIndex] = parseYamlNode(lines, index + 1, yamlIndent(next));
+					item[pair.key] = child;
+					index = nextIndex;
+				} else {
+					item[pair.key] = {};
+					index += 1;
+				}
+			} else {
+				item[pair.key] = parseYAMLValue(pair.value);
+				index += 1;
+			}
+			while (index < lines.length && yamlIndent(lines[index]) > indent && !lines[index].trim().startsWith("-")) {
+				const nestedIndent = yamlIndent(lines[index]);
+				const [child, nextIndex] = parseYamlObject(lines, index, nestedIndent);
+				Object.assign(item, child);
+				index = nextIndex;
+			}
+			items.push(item);
+			continue;
+		}
+		items.push(parseYAMLValue(rest));
+		index += 1;
+	}
+	return [items, index];
 }
 
 /**

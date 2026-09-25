@@ -22,6 +22,13 @@ function readLocalEpubData(files: Map<string, string>) {
   return JSON.parse(files.get(resolveLocalEpubDataPath(files)) || '{}');
 }
 
+function readBookmarkMarkdown(files: Map<string, string>): string {
+  const bookmark = [...files.entries()].find(
+    ([path]) => path.includes('Weave EPUB Reader/') && path.endsWith('.md')
+  );
+  return bookmark?.[1] || '';
+}
+
 function readLocalScanIndex(files: Map<string, string>) {
   return JSON.parse(files.get(LOCAL_EPUB_SCAN_INDEX_PATH) || '[]');
 }
@@ -618,9 +625,10 @@ describe('EpubStorageService', () => {
     });
   });
 
-  it('stores, loads, and clears the reading reference point in the unified local epub data file', async () => {
+  it('stores, loads, and clears the reading reference point in the bookmark markdown', async () => {
     const { app, files } = createMemoryApp();
     const service = new EpubStorageService(app);
+    await service.saveBook(createBook());
 
     await service.saveReadingReferencePoint('book-1', {
       chapterIndex: 3,
@@ -630,13 +638,10 @@ describe('EpubStorageService', () => {
       savedAt: 1710000001000,
     });
 
-    expect(readLocalEpubData(files).books['book-1'].readingReferencePoint).toEqual({
-      chapterIndex: 3,
-      cfi: 'epubcfi(/6/14!/4/2/8)',
-      percent: 48.2,
-      title: '第四章',
-      savedAt: 1710000001000,
-    });
+    const bookmark = readBookmarkMarkdown(files);
+    expect(bookmark).toContain('readingReferencePoint:');
+    expect(bookmark).toContain('epubcfi(/6/14!/4/2/8)');
+    expect(JSON.stringify(readLocalEpubData(files))).not.toContain('readingReferencePoint');
 
     await expect(service.loadReadingReferencePoint('book-1')).resolves.toEqual({
       chapterIndex: 3,
@@ -648,13 +653,14 @@ describe('EpubStorageService', () => {
 
     await service.deleteReadingReferencePoint('book-1');
 
-    expect(readLocalEpubData(files).books['book-1'].readingReferencePoint).toBeNull();
+    expect(readBookmarkMarkdown(files)).not.toContain('readingReferencePoint:');
     await expect(service.loadReadingReferencePoint('book-1')).resolves.toBeNull();
   });
 
-  it('stores concealed text fragments in the unified local epub data file', async () => {
+  it('stores concealed text fragments in the bookmark markdown', async () => {
     const { app, files } = createMemoryApp();
     const service = new EpubStorageService(app);
+    await service.saveBook(createBook());
 
     await service.saveConcealedTexts('book-1', [
       {
@@ -667,7 +673,9 @@ describe('EpubStorageService', () => {
       },
     ]);
 
-    expect(readLocalEpubData(files).books['book-1'].concealedTexts).toEqual([
+    expect(readBookmarkMarkdown(files)).toContain('cfiRange: "/6/4"');
+    expect(JSON.stringify(readLocalEpubData(files))).not.toContain('concealedTexts');
+    await expect(service.loadConcealedTexts('book-1')).resolves.toEqual([
       {
         id: 'conceal-1',
         text: '低价值片段',
@@ -679,7 +687,7 @@ describe('EpubStorageService', () => {
     ]);
   });
 
-  it('loads concealed text fragments from the legacy sync path when local artifacts are absent', async () => {
+  it('does not import concealed text fragments from the legacy sync path', async () => {
     const { app } = createMemoryApp({
       [`${SYNC_EPUB_ROOT}/book-1/concealed-texts.json`]: JSON.stringify([
         {
@@ -694,16 +702,7 @@ describe('EpubStorageService', () => {
     });
     const service = new EpubStorageService(app);
 
-    await expect(service.loadConcealedTexts('book-1')).resolves.toEqual([
-      {
-        id: 'conceal-legacy',
-        text: 'legacy text',
-        mode: 'mask',
-        chapterIndex: 2,
-        cfiRange: '/6/8',
-        createdTime: 456,
-      },
-    ]);
+    await expect(service.loadConcealedTexts('book-1')).resolves.toEqual([]);
   });
 
   it('can consolidate legacy epub local data into one plugin-local file and remove the legacy files', async () => {
@@ -827,12 +826,6 @@ describe('EpubStorageService', () => {
               percent: 66,
             },
           },
-          concealedTexts: [
-            {
-              id: 'conceal-1',
-              cfiRange: '/6/4',
-            },
-          ],
         },
       },
       readerSettings: {
@@ -996,6 +989,7 @@ describe('EpubStorageService', () => {
   it('deduplicates concealed text fragments by cfi range when adding repeatedly', async () => {
     const { app } = createMemoryApp();
     const service = new EpubStorageService(app);
+    await service.saveBook(createBook());
 
     await service.addConcealedText('book-1', {
       id: 'conceal-1',
@@ -1404,22 +1398,15 @@ describe('EpubStorageService', () => {
     expect(localData.bookshelfMembership).toEqual([]);
   });
 
-  it('persists bookshelf custom cover paths across reload', async () => {
+  it('persists bookshelf custom cover paths in the bookmark markdown', async () => {
     const { app, files } = createMemoryApp({}, ['Books/demo.epub', 'Assets/cover.png']);
     const service = new EpubStorageService(app);
 
     await service.addBooksToBookshelf(['Books/demo.epub']);
     await expect(service.setBookshelfCustomCover('Books/demo.epub', 'Assets/cover.png')).resolves.toBe(true);
 
-    await expect(service.loadBookshelfMembership()).resolves.toEqual([
-      expect.objectContaining({
-        path: 'Books/demo.epub',
-        customCoverPath: 'Assets/cover.png',
-      }),
-    ]);
-
-    const reloadedService = new EpubStorageService(app);
-    await expect(reloadedService.loadBookshelfMembership()).resolves.toEqual([
+    expect(readBookmarkMarkdown(files)).toContain('customCoverPath: "Assets/cover.png"');
+    await expect(service.listBookshelfEntries()).resolves.toEqual([
       expect.objectContaining({
         path: 'Books/demo.epub',
         customCoverPath: 'Assets/cover.png',
@@ -1428,12 +1415,20 @@ describe('EpubStorageService', () => {
     expect(readLocalEpubData(files).bookshelfMembership).toEqual([
       expect.objectContaining({
         path: 'Books/demo.epub',
+      }),
+    ]);
+    expect(JSON.stringify(readLocalEpubData(files).bookshelfMembership)).not.toContain('customCoverPath');
+
+    const reloadedService = new EpubStorageService(app);
+    await expect(reloadedService.listBookshelfEntries()).resolves.toEqual([
+      expect.objectContaining({
+        path: 'Books/demo.epub',
         customCoverPath: 'Assets/cover.png',
       }),
     ]);
   });
 
-  it('merges duplicate bookshelf membership rows without dropping custom cover paths', async () => {
+  it('merges duplicate bookshelf membership rows by path', async () => {
     const { app } = createMemoryApp({
       [LOCAL_EPUB_DATA_PATH]: JSON.stringify({
         version: 1,
@@ -1446,7 +1441,6 @@ describe('EpubStorageService', () => {
           {
             path: 'Books/demo.epub',
             addedAt: 100,
-            customCoverPath: 'Assets/cover.png',
           },
         ],
       }),
@@ -1457,7 +1451,6 @@ describe('EpubStorageService', () => {
       {
         path: 'Books/demo.epub',
         addedAt: 100,
-        customCoverPath: 'Assets/cover.png',
       },
     ]);
   });
@@ -1948,15 +1941,7 @@ describe('EpubStorageService', () => {
           bookCatalogStoredLocally: true,
           bookshelfMembership: [{ path: bookPath, addedAt: 1 }],
           books: {
-            [orphanId]: {
-              readingReferencePoint: {
-                chapterIndex: 2,
-                cfi: '/6/4',
-                percent: 33,
-                title: 'Ch2',
-                savedAt: 1000,
-              },
-            },
+            [orphanId]: {},
           },
         }),
       },
