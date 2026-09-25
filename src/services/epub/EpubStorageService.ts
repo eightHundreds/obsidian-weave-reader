@@ -1553,7 +1553,7 @@ export class EpubStorageService {
 			}
 
 			const normalized = Object.fromEntries(
-				Object.entries(parsed as Record<string, unknown>)
+				Object.entries(parsed)
 					.map(
 						([bookId, canvasPath]) =>
 							[String(bookId || "").trim(), normalizePath(unknownPlainText(canvasPath).trim())] as const

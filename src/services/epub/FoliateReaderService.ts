@@ -2917,8 +2917,22 @@ export class FoliateReaderService implements EpubReaderEngine {
 		if (typeof legacyGetContents !== "function") {
 			return [];
 		}
-		const legacyContents = legacyGetContents.call(this.foliateView);
-		return Array.isArray(legacyContents) ? legacyContents : [];
+		const legacyContents: unknown = legacyGetContents.call(this.foliateView);
+		if (!Array.isArray(legacyContents)) {
+			return [];
+		}
+		const contents: Array<{ index?: number; doc?: Document | null }> = [];
+		for (const item of legacyContents as unknown[]) {
+			if (!item || typeof item !== "object") {
+				continue;
+			}
+			const record = item as { index?: unknown; doc?: unknown };
+			contents.push({
+				index: typeof record.index === "number" ? record.index : undefined,
+				doc: record.doc instanceof Document ? record.doc : null,
+			});
+		}
+		return contents;
 	}
 
 	private getVisibleFramesWithIndex(): VisibleFrameWithIndex[] {

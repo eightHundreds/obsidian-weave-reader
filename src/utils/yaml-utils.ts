@@ -479,14 +479,30 @@ function normalizeLegacyCreatedField(yaml: YAMLFrontmatter): YAMLFrontmatter {
  * @param value 可能是数组或单个值
  * @returns 数组
  */
+function yamlLeafToString(value: YAMLValue): string | null {
+	if (typeof value === "string") {
+		return value;
+	}
+	if (typeof value === "number" && Number.isFinite(value)) {
+		return String(value);
+	}
+	if (typeof value === "boolean") {
+		return value ? "true" : "false";
+	}
+	return null;
+}
+
 function normalizeToArray(value: YAMLValue | undefined): string[] | undefined {
 	if (value === undefined || value === null) {
 		return undefined;
 	}
 	if (Array.isArray(value)) {
-		return value.map((v) => String(v));
+		return value
+			.map((entry) => yamlLeafToString(entry))
+			.filter((entry): entry is string => entry !== null);
 	}
-	return [String(value)];
+	const leaf = yamlLeafToString(value);
+	return leaf === null ? undefined : [leaf];
 }
 
 // ===== 属性写入函数 =====
@@ -621,7 +637,11 @@ function formatYAMLLine(key: string, value: YAMLValue): string {
 			return `${key}: []`;
 		}
 		// 多行数组格式
-		const items = value.map((item) => `  - ${quoteIfNeeded(String(item))}`).join("\n");
+		const items = value
+			.map((item) => yamlLeafToString(item))
+			.filter((item): item is string => item !== null)
+			.map((item) => `  - ${quoteIfNeeded(item)}`)
+			.join("\n");
 		return `${key}:\n${items}`;
 	}
 

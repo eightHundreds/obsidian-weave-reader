@@ -113,6 +113,19 @@ export function median(values: number[]): number | undefined {
 	return (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
+function normalizeRecentIntervalWpms(value: unknown): number[] {
+	if (!Array.isArray(value)) {
+		return [];
+	}
+	const samples: number[] = [];
+	for (const entry of value as unknown[]) {
+		if (typeof entry === "number" && Number.isFinite(entry)) {
+			samples.push(clampWpm(entry));
+		}
+	}
+	return samples.slice(-PACE_RECENT_SAMPLES_MAX);
+}
+
 export function normalizeReadingPaceStats(
 	stats: Partial<ReadingStats> | Record<string, unknown> | null | undefined,
 	now = Date.now()
@@ -147,12 +160,7 @@ export function normalizeReadingPaceStats(
 			typeof base.paceSampleWords === "number" && Number.isFinite(base.paceSampleWords)
 				? Math.max(0, Math.round(base.paceSampleWords))
 				: 0,
-		recentIntervalWpms: Array.isArray(base.recentIntervalWpms)
-			? base.recentIntervalWpms
-					.filter((value) => typeof value === "number" && Number.isFinite(value))
-					.map((value) => clampWpm(value))
-					.slice(-PACE_RECENT_SAMPLES_MAX)
-			: [],
+		recentIntervalWpms: normalizeRecentIntervalWpms(base.recentIntervalWpms),
 	};
 }
 

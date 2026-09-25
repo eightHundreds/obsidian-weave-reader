@@ -47,6 +47,7 @@ const ENTRY_FILES = [
 	"types/ir-types.ts",
 	"types/view-card-modal-types.ts",
 	"types/obsidian-extensions.ts",
+	"types/obsidian-runtime-globals.d.ts",
 	"types/foliate-js.d.ts",
 	"types/weave-vendor-epubcfi.d.ts",
 	"utils/i18n/locale-policy.ts",
@@ -85,6 +86,11 @@ const TEST_GLOBS = [
 	"utils/__tests__/epub-reader-keyboard-guards.test.ts",
 	"utils/__tests__/dom-instance-of.test.ts",
 	"utils/__tests__/blob-url-text.test.ts",
+	"utils/__tests__/blob-url-registry.test.ts",
+	"utils/__tests__/clipboard-copy.test.ts",
+	"utils/__tests__/VaultMarkdownFileSuggest.test.ts",
+	"utils/__tests__/license-manager-validation.test.ts",
+	"utils/__tests__/license-validation-lease.test.ts",
 	"utils/__tests__/i18n-locales.test.ts",
 ];
 
