@@ -6,7 +6,17 @@ name: Release Obsidian Plugin
 on:
   push:
     tags:
+      # GitHub tag filters are globs. Keep the semver form, and also list
+      # patterns that match x.y.z without relying on "+" after a character class.
       - "[0-9]+.[0-9]+.[0-9]+"
+      - "[0-9].[0-9].[0-9]"
+      - "[0-9].[0-9].[0-9][0-9]"
+      - "[0-9].[0-9][0-9].[0-9]"
+      - "[0-9].[0-9][0-9].[0-9][0-9]"
+      - "[0-9][0-9].[0-9].[0-9]"
+      - "[0-9][0-9].[0-9].[0-9][0-9]"
+      - "[0-9][0-9].[0-9][0-9].[0-9]"
+      - "[0-9][0-9].[0-9][0-9].[0-9][0-9]"
   workflow_dispatch:
     inputs:
       tag:
