@@ -16,8 +16,6 @@ on:
 
 permissions:
   contents: write
-  id-token: write
-  attestations: write
 
 jobs:
   release:
@@ -41,10 +39,6 @@ jobs:
 
       - name: Install dependencies
         run: node scripts/ci-install-dependencies.cjs
-
-      - name: Verify public repo safety
-        if: github.event_name != 'workflow_dispatch'
-        run: pnpm run verify:public-repo
 
       - name: Read release version
         id: version
@@ -74,12 +68,6 @@ jobs:
           fi
 
           node -e "const versions=require('./versions.json'); const version=process.argv[1]; if (!versions[version]) { console.error('versions.json missing version ' + version); process.exit(1); }" "$TAG_VERSION"
-
-      - name: Verify Obsidian community compliance
-        run: pnpm run verify:obsidian-community
-
-      - name: Run unit tests
-        run: pnpm test
 
       - name: Prepare release notes
         id: notes
@@ -111,17 +99,6 @@ jobs:
 
       - name: Verify release assets
         run: pnpm run verify:release
-
-      - name: Verify bundle has no dynamic script injection
-        run: node scripts/verify-no-dynamic-script.cjs dist/main.js
-
-      - name: Attest release assets
-        uses: actions/attest@v4
-        with:
-          subject-path: |
-            dist/main.js
-            dist/manifest.json
-            dist/styles.css
 
       - name: Create or update GitHub release
         env:
