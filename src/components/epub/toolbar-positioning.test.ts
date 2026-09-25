@@ -10,6 +10,22 @@ import {
 } from './toolbar-positioning';
 
 describe('toolbar-positioning', () => {
+	it('shifts the toolbar right so color chips hanging off its left edge stay in view', () => {
+		const result = computeToolbarPosition({
+			anchorRect: { top: 80, left: 40, bottom: 96, right: 96, width: 56, height: 16 },
+			containerWidth: 390,
+			containerHeight: 480,
+			toolbarWidth: 180,
+			toolbarHeight: 72,
+			mobile: true,
+			leadingOverflow: 150,
+		});
+
+		expect(result.mode).toBe('floating');
+		expect(result.left).toBe(162);
+		expect(result.left - 150).toBeGreaterThanOrEqual(12);
+	});
+
 	it('floats mobile toolbars below the selection when the native menu stays above', () => {
 		const anchorRect = { top: 80, left: 40, bottom: 96, right: 96, width: 56, height: 16 };
 		const result = computeToolbarPosition({

@@ -39,6 +39,8 @@ export interface ToolbarPositionOptions {
 	mobile: boolean;
 	insetTop?: number;
 	insetBottom?: number;
+	/** Width of content hanging outside the toolbar's left edge (e.g. color chips). */
+	leadingOverflow?: number;
 	edgeMargin?: number;
 	gap?: number;
 	arrowPadding?: number;
@@ -343,6 +345,7 @@ export function computeToolbarPosition({
 	mobile,
 	insetTop = 0,
 	insetBottom = 0,
+	leadingOverflow = 0,
 	edgeMargin = TOOLBAR_EDGE_MARGIN,
 	gap = TOOLBAR_GAP,
 	arrowPadding = TOOLBAR_ARROW_PADDING,
@@ -385,7 +388,7 @@ export function computeToolbarPosition({
 		);
 	const activeAnchorRect = chooseAnchorRectForSide(normalizedRects, side, anchorPoint);
 	const anchorX = getAnchorX(activeAnchorRect, anchorPoint, align);
-	const minLeft = edgeMargin;
+	const minLeft = edgeMargin + Math.max(0, leadingOverflow);
 	const maxLeft = containerWidth - edgeMargin - toolbarWidth;
 	const idealLeft = align === "center"
 		? anchorX - toolbarWidth / 2
@@ -442,6 +445,26 @@ export function computeToolbarPosition({
 	}
 
 	return floating;
+}
+
+const COLOR_ROW_HANG_GAP = 10;
+
+/**
+ * Floating toolbars hang the color chips to the left of the box. Docked mode lays them
+ * out inline, so the measured overflow would be zero; fall back to the row width then,
+ * because the next placement may switch back to floating.
+ */
+export function measureLeadingOverflow(toolbarEl: HTMLElement, colorRowSelector: string): number {
+	const colorRow = toolbarEl.querySelector<HTMLElement>(colorRowSelector);
+	if (!colorRow) {
+		return 0;
+	}
+	const hangsOutside = colorRow.ownerDocument.defaultView?.getComputedStyle(colorRow).position === "absolute";
+	if (hangsOutside) {
+		const overflow = toolbarEl.getBoundingClientRect().left - colorRow.getBoundingClientRect().left;
+		return Math.max(0, overflow);
+	}
+	return colorRow.offsetWidth > 0 ? colorRow.offsetWidth + COLOR_ROW_HANG_GAP : 0;
 }
 
 export function createEventBinder() {

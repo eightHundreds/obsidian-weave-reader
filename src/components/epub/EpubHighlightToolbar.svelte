@@ -8,6 +8,7 @@
 		computeToolbarPosition,
 		createEventBinder,
 		isEventOutsideToolbar,
+		measureLeadingOverflow,
 		resolveMobileFloatingInsetBottom,
 	} from './toolbar-positioning';
 
@@ -177,6 +178,7 @@
 			insetBottom: isMobileToolbar
 				? resolveMobileFloatingInsetBottom(mobileDockBottomOffset)
 				: 0,
+			leadingOverflow: measureLeadingOverflow(toolbarEl, '.highlight-color-row'),
 		});
 
 		toolbarMode = position.mode;

@@ -32,6 +32,7 @@ function clearHosts(hosts: EpubBasicSettingsMountOptions["hosts"]): void {
 	hosts.interface.replaceChildren();
 	hosts.premiumPreview.replaceChildren();
 	hosts.reading.replaceChildren();
+	hosts.selectionToolbar.replaceChildren();
 	hosts.selectionTranslation.replaceChildren();
 	hosts.diagnostics.replaceChildren();
 }
@@ -182,6 +183,17 @@ export function mountEpubBasicSettings(options: EpubBasicSettingsMountOptions): 
 			toggle.setValue(snapshot.premiumPreviewEnabled);
 			toggle.onChange(async (value) => {
 				await callbacks.updatePremiumPreview(value);
+			});
+		});
+
+	new Setting(hosts.selectionToolbar)
+		.setName(t("epub.settings.basic.hideSelectionCreateCard"))
+		.setDesc(t("epub.settings.basic.hideSelectionCreateCardDesc"))
+		.setClass("epub-selection-toolbar-create-card-setting")
+		.addToggle((toggle) => {
+			toggle.setValue(snapshot.selectionToolbarSettings.items.createCard?.hidden === true);
+			toggle.onChange(async (value) => {
+				await callbacks.updateSelectionToolbarItemHidden("createCard", value);
 			});
 		});
 

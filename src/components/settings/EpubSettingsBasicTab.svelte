@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, untrack } from "svelte";
   import { normalizeSelectionTranslationSettings } from "../../config/selection-translation-settings";
+  import { normalizeSelectionToolbarSettings } from "../../config/selection-toolbar-settings";
   import { EPUB_RUNTIME, normalizeEpubBookmarkFolderPath } from "../../services/epub";
   import type { CustomWebTranslationProvider } from "../../config/selection-translation-settings";
   import { normalizeInterfaceLanguagePreference, tr } from "../../utils/i18n";
@@ -20,6 +21,7 @@
   let interfaceSettingsHost = $state<HTMLDivElement | null>(null);
   let premiumPreviewSettingsHost = $state<HTMLDivElement | null>(null);
   let readingSettingsHost = $state<HTMLDivElement | null>(null);
+  let selectionToolbarSettingsHost = $state<HTMLDivElement | null>(null);
   let selectionTranslationSettingsHost = $state<HTMLDivElement | null>(null);
   let diagnosticsSettingsHost = $state<HTMLDivElement | null>(null);
 
@@ -64,6 +66,15 @@
     stateVersion;
     return normalizeSelectionTranslationSettings(plugin.settings?.selectionTranslation);
   });
+
+  let selectionToolbarSettings = $derived.by(() => {
+    stateVersion;
+    return normalizeSelectionToolbarSettings(plugin.settings?.selectionToolbar);
+  });
+
+  let selectionToolbarCreateCardHidden = $derived(
+    selectionToolbarSettings.items.createCard?.hidden === true
+  );
 
   let selectionTranslationCustomProviderCount = $derived.by(() => {
     stateVersion;
@@ -150,6 +161,7 @@
       || !interfaceSettingsHost
       || !premiumPreviewSettingsHost
       || !readingSettingsHost
+      || !selectionToolbarSettingsHost
       || !selectionTranslationSettingsHost
       || !diagnosticsSettingsHost
     ) {
@@ -158,6 +170,7 @@
 
     excerptSettingsVersion;
     t;
+    selectionToolbarCreateCardHidden;
     selectionTranslationCustomProviderCount;
 
     let dispose: (() => void) | undefined;
@@ -170,6 +183,7 @@
           interface: interfaceSettingsHost,
           premiumPreview: premiumPreviewSettingsHost,
           reading: readingSettingsHost,
+          selectionToolbar: selectionToolbarSettingsHost,
           selectionTranslation: selectionTranslationSettingsHost,
           diagnostics: diagnosticsSettingsHost,
         },
@@ -183,6 +197,7 @@
           bookNotesExportDefaultTemplatePath,
           sourceNavigationOpenInNewTab,
           debugModeEnabled,
+          selectionToolbarSettings,
           selectionTranslationSettings,
           customTranslationProviderDrafts,
         },
@@ -206,6 +221,7 @@
           commitCustomTranslationProviderDrafts: actions.commitCustomTranslationProviderDrafts,
           addCustomTranslationProvider: actions.addCustomTranslationProvider,
           removeCustomTranslationProvider: actions.removeCustomTranslationProvider,
+          updateSelectionToolbarItemHidden: actions.updateSelectionToolbarItemHidden,
           updateSourceNavigationOpenInNewTab: actions.updateSourceNavigationOpenInNewTab,
           updateDebugMode: actions.updateDebugMode,
         },
@@ -236,6 +252,14 @@
       <h3 class="epub-settings-group-title with-accent-bar accent-purple">{t("epub.settings.groups.reading")}</h3>
     </div>
     <div bind:this={readingSettingsHost} class="epub-native-settings-host"></div>
+  </div>
+
+  <div class="epub-settings-group epub-settings-group--panel">
+    <div class="epub-settings-group-header">
+      <h3 class="epub-settings-group-title with-accent-bar accent-purple">{t("epub.settings.groups.selectionToolbar")}</h3>
+      <p class="epub-settings-group-description">{t("epub.settings.basic.selectionToolbarDesc")}</p>
+    </div>
+    <div bind:this={selectionToolbarSettingsHost} class="epub-native-settings-host"></div>
   </div>
 
   <div class="epub-settings-group epub-settings-group--panel">

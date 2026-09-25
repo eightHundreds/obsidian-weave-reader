@@ -4,6 +4,12 @@ import {
 	type CustomWebTranslationProvider,
 	type SelectionTranslationSettings,
 } from "../../config/selection-translation-settings";
+import {
+	normalizeSelectionToolbarSettings,
+	withSelectionToolbarItemHidden,
+	type SelectionToolbarItemId,
+	type SelectionToolbarSettings,
+} from "../../config/selection-toolbar-settings";
 import { getEpubStorageService, normalizeEpubBookmarkFolderPath } from "../../services/epub";
 import { notifyExcerptSettingsChanged } from "../../services/epub/excerpt-settings-events";
 import { ensureDefaultBookNotesExportTemplates } from "../../services/epub/book-notes-export/install-templates";
@@ -53,6 +59,10 @@ export function createEpubBasicSettingsActions(deps: EpubBasicSettingsActionDeps
 	): Promise<void> {
 		plugin.settings.selectionTranslation = next;
 		await deps.save();
+	}
+
+	function getSelectionToolbarSettings(): SelectionToolbarSettings {
+		return normalizeSelectionToolbarSettings(plugin.settings?.selectionToolbar);
 	}
 
 	async function refreshBookNotesExportTemplateFolder(options?: {
@@ -174,6 +184,18 @@ export function createEpubBasicSettingsActions(deps: EpubBasicSettingsActionDeps
 				},
 			});
 			modal.open();
+		},
+
+		async updateSelectionToolbarItemHidden(
+			itemId: SelectionToolbarItemId,
+			hidden: boolean
+		): Promise<void> {
+			plugin.settings.selectionToolbar = withSelectionToolbarItemHidden(
+				getSelectionToolbarSettings(),
+				itemId,
+				hidden
+			);
+			await deps.save();
 		},
 
 		async updateSourceNavigationOpenInNewTab(enabled: boolean): Promise<void> {

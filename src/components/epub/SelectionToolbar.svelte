@@ -18,6 +18,12 @@
 	import { openObsidianVaultSearch } from '../../services/obsidian/obsidian-vault-search';
 	import { openObsidianWebSearch } from '../../services/obsidian/obsidian-web-search';
 	import {
+		isSelectionToolbarItemHidden,
+		normalizeSelectionToolbarSettings,
+		type SelectionToolbarSettings,
+	} from '../../config/selection-toolbar-settings';
+	import { getEpubRuntime } from '../../services/epub/epub-runtime';
+	import {
 		listActiveTranslationProviders,
 		openWebTranslationProvider,
 		readSelectionTranslationSettings,
@@ -29,6 +35,7 @@
 		computeToolbarPosition,
 		createEventBinder,
 		getEventTargetNode,
+		measureLeadingOverflow,
 		shouldDismissToolbarOnPointerDown,
 		resolveMobileFloatingInsetBottom,
 	} from './toolbar-positioning';
@@ -90,6 +97,18 @@
 	}: Props = $props();
 	let t = $derived($tr);
 	let canUseAiSplit = $derived(isWeaveMainPluginEnabled(app));
+	let selectionToolbarSettings = $state<SelectionToolbarSettings>(
+		normalizeSelectionToolbarSettings(undefined)
+	);
+	let showCreateCard = $derived(
+		Boolean(onExtractToCard) && !isSelectionToolbarItemHidden(selectionToolbarSettings, 'createCard')
+	);
+
+	function refreshSelectionToolbarSettings() {
+		const plugin = (app as App & { plugins?: { getPlugin?: (id: string) => { settings?: { selectionToolbar?: unknown } } | null } }).plugins
+			?.getPlugin?.(getEpubRuntime().pluginId);
+		selectionToolbarSettings = normalizeSelectionToolbarSettings(plugin?.settings?.selectionToolbar);
+	}
 
 	let toolbarEl: HTMLDivElement | undefined = $state(undefined);
 	let isVisible = $state(false);
@@ -585,6 +604,7 @@
 		anchorRects: DOMRect[] = [],
 		anchorPoint?: ReaderAnchorPoint
 	) {
+		refreshSelectionToolbarSettings();
 		isVisible = true;
 		await tick();
 
@@ -616,6 +636,7 @@
 			insetBottom: isMobileToolbar
 				? resolveMobileFloatingInsetBottom(mobileDockBottomOffset)
 				: 0,
+			leadingOverflow: measureLeadingOverflow(toolbarEl, '.selection-color-row'),
 		});
 
 		toolbarMode = position.mode;
@@ -871,11 +892,11 @@
 					<span class="action-label">{t('epub.selectionToolbar.vaultSearch')}</span>
 				</button>
 
-				{#if onExtractToCard && (canUseExcerptNotes || canPreviewLockedExcerptFeature())}
+				{#if showCreateCard && (canUseExcerptNotes || canPreviewLockedExcerptFeature())}
 					<div class="row-divider"></div>
 				{/if}
 
-				{#if onExtractToCard}
+				{#if showCreateCard}
 					<button class="clickable-icon action-item accent" onclick={handleExtractToCard} title={t('epub.selectionToolbar.createCardTitle')} aria-label={t('epub.selectionToolbar.createCardTitle')}>
 						<span class="action-icon" use:icon={'scissors'}></span>
 						<span class="action-label">{t('epub.selectionToolbar.createCard')}</span>

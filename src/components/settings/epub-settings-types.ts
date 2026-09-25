@@ -2,6 +2,10 @@ import type {
 	CustomWebTranslationProvider,
 	SelectionTranslationSettings,
 } from "../../config/selection-translation-settings";
+import type {
+	SelectionToolbarItemId,
+	SelectionToolbarSettings,
+} from "../../config/selection-toolbar-settings";
 import type { InterfaceLanguagePreference } from "../../utils/i18n";
 import type StandaloneEpubPlugin from "../../main";
 
@@ -18,6 +22,7 @@ export interface EpubBasicSettingsHosts {
 	interface: HTMLElement;
 	premiumPreview: HTMLElement;
 	reading: HTMLElement;
+	selectionToolbar: HTMLElement;
 	selectionTranslation: HTMLElement;
 	diagnostics: HTMLElement;
 }
@@ -32,6 +37,7 @@ export interface EpubBasicSettingsSnapshot {
 	bookNotesExportDefaultTemplatePath: string;
 	sourceNavigationOpenInNewTab: boolean;
 	debugModeEnabled: boolean;
+	selectionToolbarSettings: SelectionToolbarSettings;
 	selectionTranslationSettings: SelectionTranslationSettings;
 	customTranslationProviderDrafts: CustomWebTranslationProvider[];
 }
@@ -58,6 +64,10 @@ export interface EpubBasicSettingsCallbacks {
 	commitCustomTranslationProviderDrafts: () => Promise<void>;
 	addCustomTranslationProvider: () => Promise<void>;
 	removeCustomTranslationProvider: (index: number) => Promise<void>;
+	updateSelectionToolbarItemHidden: (
+		itemId: SelectionToolbarItemId,
+		hidden: boolean
+	) => Promise<void>;
 	updateSourceNavigationOpenInNewTab: (enabled: boolean) => Promise<void>;
 	updateDebugMode: (enabled: boolean) => Promise<void>;
 }
