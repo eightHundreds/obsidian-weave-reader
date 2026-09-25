@@ -2692,6 +2692,21 @@ export class EpubStorageService {
 		const preferredSourceFingerprint = String(
 			options.preferredSourceFingerprint || ""
 		).trim().toLowerCase();
+		const registeredFingerprint = String(byPath?.sourceFingerprint || "").trim().toLowerCase();
+		if (
+			byPath &&
+			currentStat &&
+			registeredFingerprint &&
+			typeof currentStat.size === "number" &&
+			typeof currentStat.mtime === "number" &&
+			byPath.sourceSize === currentStat.size &&
+			byPath.sourceMtime === currentStat.mtime &&
+			byPath.sourceId === this.generateSourceId(registeredFingerprint) &&
+			(!preferredSourceFingerprint || preferredSourceFingerprint === registeredFingerprint) &&
+			(!options.preferredSourceId || options.preferredSourceId === byPath.sourceId)
+		) {
+			return byPath;
+		}
 		const sourceFingerprint =
 			preferredSourceFingerprint || (await this.computeSourceFingerprint(normalizedPath));
 		const canonicalSourceId = sourceFingerprint

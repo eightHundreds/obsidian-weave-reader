@@ -66,6 +66,70 @@ function resolveCoverExtension(mimeType: string): string {
 	}
 }
 
+const COVER_EXTENSIONS = ["jpg", "png", "webp", "gif"] as const;
+
+type CoverExtractionResult = {
+	sourceSignature: string;
+	coverPath?: string;
+};
+
+const coverExtractionResults = new WeakMap<App, Map<string, CoverExtractionResult>>();
+const inflightCoverExtractions = new WeakMap<App, Map<string, Promise<string | undefined>>>();
+
+function getAppScopedMap<T>(store: WeakMap<App, Map<string, T>>, app: App): Map<string, T> {
+	let map = store.get(app);
+	if (!map) {
+		map = new Map();
+		store.set(app, map);
+	}
+	return map;
+}
+
+function buildSourceSignature(file: TFile): string {
+	return `${file.stat?.size ?? 0}:${file.stat?.mtime ?? 0}`;
+}
+
+async function findExistingCoverFile(
+	app: App,
+	bookmarkFolder: string,
+	stableKey: string
+): Promise<string | undefined> {
+	for (const extension of COVER_EXTENSIONS) {
+		const candidate = buildEpubBookmarkCoverPath(bookmarkFolder, stableKey, extension);
+		if (await app.vault.adapter.exists(candidate)) {
+			return candidate;
+		}
+	}
+	return undefined;
+}
+
+async function extractCoverToVault(
+	app: App,
+	bookPath: string,
+	bookmarkFolder: string,
+	stableKey: string
+): Promise<string | undefined> {
+	let coverImage: string | undefined;
+	const parser = new FoliateVaultPublicationParser(app);
+	try {
+		const loaded = await parser.load(bookPath, { coverOnly: true });
+		coverImage = loaded.coverImage;
+	} finally {
+		parser.dispose();
+	}
+
+	const decoded = coverImage ? decodeDataUrlToArrayBuffer(coverImage) : null;
+	if (!decoded) {
+		return undefined;
+	}
+
+	const extension = resolveCoverExtension(decoded.mimeType);
+	const coverPath = buildEpubBookmarkCoverPath(bookmarkFolder, stableKey, extension);
+	await DirectoryUtils.ensureDirForFile(app.vault.adapter, coverPath);
+	await app.vault.adapter.writeBinary(coverPath, decoded.buffer);
+	return coverPath;
+}
+
 export async function ensureEpubBookmarkCoverPath(
 	app: App,
 	input: {
@@ -91,25 +155,38 @@ export async function ensureEpubBookmarkCoverPath(
 		return existingCoverPath || undefined;
 	}
 
-	let coverImage: string | undefined;
-	try {
-		const parser = new FoliateVaultPublicationParser(app);
-		const loaded = await parser.load(bookPath);
-		coverImage = loaded.coverImage;
-		parser.dispose();
-	} catch (error) {
-		logger.warn("[EpubBookmarkCover] Failed to load cover from book:", error);
-		return existingCoverPath || undefined;
+	const onDiskCoverPath = await findExistingCoverFile(app, input.bookmarkFolder, stableKey);
+	if (onDiskCoverPath) {
+		return onDiskCoverPath;
 	}
 
-	const decoded = coverImage ? decodeDataUrlToArrayBuffer(coverImage) : null;
-	if (!decoded) {
-		return existingCoverPath || undefined;
+	// Misses are cached too: bookmark writes are frequent and parsing a large MOBI blocks the renderer.
+	const cacheKey = `${bookPath}\u0000${normalizePath(input.bookmarkFolder)}\u0000${stableKey}`;
+	const sourceSignature = buildSourceSignature(vaultFile);
+	const results = getAppScopedMap(coverExtractionResults, app);
+	const cached = results.get(cacheKey);
+	if (cached && cached.sourceSignature === sourceSignature) {
+		return cached.coverPath || existingCoverPath || undefined;
 	}
 
-	const extension = resolveCoverExtension(decoded.mimeType);
-	const coverPath = buildEpubBookmarkCoverPath(input.bookmarkFolder, stableKey, extension);
-	await DirectoryUtils.ensureDirForFile(app.vault.adapter, coverPath);
-	await app.vault.adapter.writeBinary(coverPath, decoded.buffer);
-	return coverPath;
+	const inflight = getAppScopedMap(inflightCoverExtractions, app);
+	let pending = inflight.get(cacheKey);
+	if (!pending) {
+		pending = extractCoverToVault(app, bookPath, input.bookmarkFolder, stableKey)
+			.then((coverPath) => {
+				results.set(cacheKey, { sourceSignature, coverPath });
+				return coverPath;
+			})
+			.catch((error) => {
+				logger.warn("[EpubBookmarkCover] Failed to load cover from book:", error);
+				results.set(cacheKey, { sourceSignature });
+				return undefined;
+			})
+			.finally(() => {
+				inflight.delete(cacheKey);
+			});
+		inflight.set(cacheKey, pending);
+	}
+
+	return (await pending) || existingCoverPath || undefined;
 }

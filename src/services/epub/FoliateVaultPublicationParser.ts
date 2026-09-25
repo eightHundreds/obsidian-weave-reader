@@ -267,6 +267,8 @@ type MarkdownExportContext = {
 export interface FoliatePublicationLoadOptions {
 	/** IR 导入等场景只需目录，跳过章节正文扫描与封面提取。 */
 	tocOnly?: boolean;
+	/** 后台书签/封面用途只需元数据与封面，跳过章节扫描与后台 hydrate。 */
+	coverOnly?: boolean;
 }
 
 export class FoliateVaultPublicationParser {
@@ -389,6 +391,17 @@ export class FoliateVaultPublicationParser {
 				fileName: this.fileName,
 				book: this.currentBook,
 				tocItems: this.tocItems,
+				metadata: this.metadata,
+				totalPositions: 0,
+			};
+		}
+		if (options?.coverOnly) {
+			return {
+				filePath,
+				fileName: this.fileName,
+				book: this.currentBook,
+				tocItems: this.tocItems,
+				coverImage: (await this.extractCoverDataUrl()) || undefined,
 				metadata: this.metadata,
 				totalPositions: 0,
 			};

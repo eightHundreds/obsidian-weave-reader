@@ -2143,4 +2143,22 @@ describe('EpubStorageService', () => {
     expect(files.has(LOCAL_EPUB_PARAGRAPH_MODE_POSITIONS_PATH)).toBe(true);
     expect(files.has(legacyPath)).toBe(false);
   });
+
+  it('reuses registered source identity without re-reading an unchanged book', async () => {
+    const { app } = createMemoryApp({}, ['Books/large.mobi']);
+    const service = new EpubStorageService(app);
+
+    const first = await service.ensureSourceIdentity('Books/large.mobi');
+    expect(first?.sourceFingerprint).toBeTruthy();
+    const readsAfterFirst = app.vault.adapter.readBinary.mock.calls.length;
+
+    const second = await service.ensureSourceIdentity('Books/large.mobi');
+    const third = await service.ensureSourceIdentity('Books/large.mobi', {
+      preferredSourceId: first?.sourceId,
+    });
+
+    expect(second?.sourceId).toBe(first?.sourceId);
+    expect(third?.sourceId).toBe(first?.sourceId);
+    expect(app.vault.adapter.readBinary.mock.calls.length).toBe(readsAfterFirst);
+  });
 });

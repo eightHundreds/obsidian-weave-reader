@@ -238,9 +238,9 @@ export class EpubAnnotationIndexService {
 				await backlink.collectHighlights(input.filePath, canvasPath);
 			}
 
+			this.warmedBookPaths.add(input.filePath);
 			if (snapshotService.getCachedSnapshot(input)) {
 				this.readinessByContextKey.set(contextKey, "ready");
-				this.warmedBookPaths.add(input.filePath);
 			} else {
 				this.readinessByContextKey.set(contextKey, "unknown");
 			}
