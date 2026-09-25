@@ -234,7 +234,9 @@ scratch/
 output/
 .windsurf/
 # Cursor / AI 开发文档 — 仅本地，禁止提交或推送到公开 GitHub
-.cursor/
+.cursor/*
+!.cursor/skills/
+!.cursor/skills/**
 AGENTS.md
 .playwright-cli/
 开发规则.zh-CN.md
