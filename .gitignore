@@ -125,6 +125,7 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+.obsidian/
 *.swp
 *.swo
 *~
@@ -281,6 +282,7 @@ scripts/*
 !scripts/verify-public-repo-safety.cjs
 !scripts/obsidian-lint-targets.cjs
 !scripts/run-obsidian-lint.cjs
+!scripts/run-biome.cjs
 !scripts/lint-obsidian-strict.cjs
 !scripts/lint-community-audit.cjs
 !scripts/run-obsidian-community-lint.cjs

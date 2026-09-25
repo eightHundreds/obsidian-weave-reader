@@ -5,6 +5,7 @@ import { domInstanceOf } from "./utils/dom-instance-of";
 
 import { EpubDataManagementModalObsidian } from "./components/epub/EpubDataManagementModalObsidian";
 import { DEFAULT_EPUB_BOOKMARK_FOLDER } from "./config/epub-user-vault-folders";
+import { normalizeZenFabActions, type ZenFabActionSetting } from "./config/zen-fab-actions";
 import { isSupportedBookFile, isSupportedBookPath } from "./services/epub/book-format";
 import {
 	dispatchEpubBookshelfDataChanged,
@@ -117,6 +118,7 @@ interface StandaloneEpubPluginSettings {
 	interfaceLanguage: InterfaceLanguagePreference;
 	selectionTranslation: SelectionTranslationSettings;
 	selectionToolbar: SelectionToolbarSettings;
+	zenFabActions: ZenFabActionSetting[];
 }
 
 const DEFAULT_STANDALONE_EPUB_SETTINGS: StandaloneEpubPluginSettings = {
@@ -135,6 +137,7 @@ const DEFAULT_STANDALONE_EPUB_SETTINGS: StandaloneEpubPluginSettings = {
 	interfaceLanguage: "auto",
 	selectionTranslation: DEFAULT_SELECTION_TRANSLATION_SETTINGS,
 	selectionToolbar: DEFAULT_SELECTION_TOOLBAR_SETTINGS,
+	zenFabActions: [],
 };
 
 type PersistedStandaloneEpubPluginSettings = Omit<
@@ -383,6 +386,7 @@ export default class StandaloneEpubPlugin extends Plugin implements EpubHostCapa
 		this.settings.interfaceLanguage = normalizeInterfaceLanguagePreference(
 			this.settings.interfaceLanguage
 		);
+		this.settings.zenFabActions = normalizeZenFabActions(this.settings.zenFabActions);
 		setInterfaceLanguagePreference(this.settings.interfaceLanguage);
 		if (licenseSettingsChanged || this.hasLegacyRememberedUiKeys(loadedData)) {
 			if (this.hasLegacyRememberedUiKeys(loadedData)) {
@@ -397,6 +401,7 @@ export default class StandaloneEpubPlugin extends Plugin implements EpubHostCapa
 		this.settings.interfaceLanguage = normalizeInterfaceLanguagePreference(
 			this.settings.interfaceLanguage
 		);
+		this.settings.zenFabActions = normalizeZenFabActions(this.settings.zenFabActions);
 		setInterfaceLanguagePreference(this.settings.interfaceLanguage);
 		syncI18nLanguage();
 

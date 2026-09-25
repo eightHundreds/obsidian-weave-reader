@@ -2,6 +2,7 @@
   import { onMount, untrack } from "svelte";
   import { normalizeSelectionTranslationSettings } from "../../config/selection-translation-settings";
   import { normalizeSelectionToolbarSettings } from "../../config/selection-toolbar-settings";
+  import { normalizeZenFabActions } from "../../config/zen-fab-actions";
   import { EPUB_RUNTIME, normalizeEpubBookmarkFolderPath } from "../../services/epub";
   import type { CustomWebTranslationProvider } from "../../config/selection-translation-settings";
   import { normalizeInterfaceLanguagePreference, tr } from "../../utils/i18n";
@@ -24,6 +25,7 @@
   let selectionToolbarSettingsHost = $state<HTMLDivElement | null>(null);
   let selectionTranslationSettingsHost = $state<HTMLDivElement | null>(null);
   let diagnosticsSettingsHost = $state<HTMLDivElement | null>(null);
+  let zenFabSettingsHost = $state<HTMLDivElement | null>(null);
 
   let bookmarkFolderInput = $state("");
   let bookNotesExportTemplateFolderInput = $state("");
@@ -70,6 +72,11 @@
   let selectionToolbarSettings = $derived.by(() => {
     stateVersion;
     return normalizeSelectionToolbarSettings(plugin.settings?.selectionToolbar);
+  });
+
+  let zenFabActions = $derived.by(() => {
+    stateVersion;
+    return normalizeZenFabActions(plugin.settings?.zenFabActions);
   });
 
   let selectionToolbarCreateCardHidden = $derived(
@@ -164,6 +171,7 @@
       || !selectionToolbarSettingsHost
       || !selectionTranslationSettingsHost
       || !diagnosticsSettingsHost
+      || !zenFabSettingsHost
     ) {
       return;
     }
@@ -172,6 +180,7 @@
     t;
     selectionToolbarCreateCardHidden;
     selectionTranslationCustomProviderCount;
+    zenFabActions;
 
     let dispose: (() => void) | undefined;
 
@@ -186,6 +195,7 @@
           selectionToolbar: selectionToolbarSettingsHost,
           selectionTranslation: selectionTranslationSettingsHost,
           diagnostics: diagnosticsSettingsHost,
+          zenFab: zenFabSettingsHost,
         },
         snapshot: {
           interfaceLanguageValue,
@@ -200,6 +210,7 @@
           selectionToolbarSettings,
           selectionTranslationSettings,
           customTranslationProviderDrafts,
+          zenFabActions,
         },
         callbacks: {
           save,
@@ -224,6 +235,9 @@
           updateSelectionToolbarItemHidden: actions.updateSelectionToolbarItemHidden,
           updateSourceNavigationOpenInNewTab: actions.updateSourceNavigationOpenInNewTab,
           updateDebugMode: actions.updateDebugMode,
+          addZenFabAction: actions.addZenFabAction,
+          updateZenFabActionCommand: actions.updateZenFabActionCommand,
+          removeZenFabAction: actions.removeZenFabAction,
         },
       });
     });
@@ -268,6 +282,14 @@
       <p class="epub-settings-group-description">{t("epub.settings.basic.selectionTranslationDesc")}</p>
     </div>
     <div bind:this={selectionTranslationSettingsHost} class="epub-native-settings-host"></div>
+  </div>
+
+  <div class="epub-settings-group epub-settings-group--panel">
+    <div class="epub-settings-group-header">
+      <h3 class="epub-settings-group-title with-accent-bar accent-purple">{t("epub.settings.groups.zenMode")}</h3>
+      <p class="epub-settings-group-description">{t("epub.settings.basic.zenFabActionsDesc")}</p>
+    </div>
+    <div bind:this={zenFabSettingsHost} class="epub-native-settings-host"></div>
   </div>
 
   <div class="epub-settings-group epub-settings-group--panel">

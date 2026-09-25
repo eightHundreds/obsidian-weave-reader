@@ -1,0 +1,185 @@
+/* Zen Mode Styles */
+
+body.weave-epub-zen-mode .workspace-leaf-content[data-type="weave-epub-reader"] .view-header,
+body.weave-epub-zen-mode .workspace-leaf-content[data-type="weave-epub-reader-standalone"] .view-header {
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.3s ease;
+}
+
+body.weave-epub-zen-mode {
+	--mobile-navbar-height: 0px;
+}
+
+body.weave-epub-zen-mode .mobile-navbar {
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	height: 0;
+	min-height: 0;
+	overflow: hidden;
+	transition: opacity 0.3s ease;
+}
+
+body.weave-epub-zen-mode .weave-epub-bottom-nav {
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.3s ease;
+}
+
+body.weave-epub-zen-mode .workspace-leaf-content[data-type="weave-epub-reader"] .view-content,
+body.weave-epub-zen-mode .workspace-leaf-content[data-type="weave-epub-reader-standalone"] .view-content,
+body.weave-epub-zen-mode .weave-epub-view-content {
+	height: 100vh !important;
+	margin-top: var(--size-4-3, 12px) !important;
+	padding-top: 0 !important;
+	padding-bottom: 0 !important;
+}
+
+/* Zen Mode Floating Button */
+.weave-epub-zen-fab {
+	position: fixed;
+	bottom: 24px;
+	right: 24px;
+	width: 45px;
+	height: 45px;
+	border-radius: 50%;
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border: none;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15),
+	            0 2px 6px rgba(0, 0, 0, 0.1);
+	cursor: pointer;
+	z-index: 1000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.weave-epub-zen-fab:hover {
+	transform: scale(1.05);
+	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2),
+	            0 3px 8px rgba(0, 0, 0, 0.12);
+}
+
+.weave-epub-zen-fab:active {
+	transform: scale(0.95);
+}
+
+.weave-epub-zen-fab.is-open {
+	background: var(--background-modifier-error);
+}
+
+.weave-epub-zen-fab svg {
+	width: 19px;
+	height: 19px;
+}
+
+/* Zen Mode Action Menu */
+.weave-epub-zen-actions {
+	position: fixed;
+	bottom: 81px;
+	right: 24px;
+	z-index: 999;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.weave-epub-zen-action {
+	width: 48px;
+	height: 48px;
+	border-radius: 50%;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	opacity: 0;
+	transform: scale(0.8) translateY(10px);
+	transition: all 0.2s ease;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.weave-epub-zen-actions.is-visible .weave-epub-zen-action {
+	opacity: 1;
+	transform: scale(1) translateY(0);
+}
+
+.weave-epub-zen-actions.is-visible .weave-epub-zen-action:nth-child(1) {
+	transition-delay: 0.05s;
+}
+
+.weave-epub-zen-actions.is-visible .weave-epub-zen-action:nth-child(2) {
+	transition-delay: 0.1s;
+}
+
+.weave-epub-zen-actions.is-visible .weave-epub-zen-action:nth-child(3) {
+	transition-delay: 0.15s;
+}
+
+.weave-epub-zen-action:hover {
+	background: var(--background-modifier-hover);
+	transform: scale(1.05);
+}
+
+.weave-epub-zen-action:active {
+	transform: scale(0.95);
+}
+
+.weave-epub-zen-action-icon {
+	display: flex;
+	width: 20px;
+	height: 20px;
+	align-items: center;
+	justify-content: center;
+}
+
+.weave-epub-zen-action svg,
+.weave-epub-zen-action-icon svg {
+	width: 20px;
+	height: 20px;
+	color: var(--text-normal);
+}
+
+.weave-epub-zen-action-label {
+	position: absolute;
+	right: 60px;
+	white-space: nowrap;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	padding: 6px 12px;
+	border-radius: 6px;
+	font-size: 13px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity 0.2s ease;
+}
+
+.weave-epub-zen-action:hover .weave-epub-zen-action-label {
+	opacity: 1;
+}
+
+/* Dark mode adjustments */
+.theme-dark .weave-epub-zen-fab {
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
+	            0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.theme-dark .weave-epub-zen-fab:hover {
+	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4),
+	            0 3px 8px rgba(0, 0, 0, 0.25);
+}
+
+.theme-dark .weave-epub-zen-action {
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.theme-dark .weave-epub-zen-action-label {
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}

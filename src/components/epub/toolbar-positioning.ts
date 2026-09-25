@@ -107,6 +107,18 @@ function normalizeAnchorRects(anchorRect: ToolbarRect, anchorRects?: ToolbarRect
 	return normalized.length ? normalized : [anchorRect];
 }
 
+function intersectsContainer(rect: ToolbarRect, containerWidth: number, containerHeight: number): boolean {
+	return rect.right > 0 && rect.left < containerWidth && rect.bottom > 0 && rect.top < containerHeight;
+}
+
+function unionRects(rects: ToolbarRect[]): ToolbarRect {
+	const top = Math.min(...rects.map((rect) => rect.top));
+	const left = Math.min(...rects.map((rect) => rect.left));
+	const bottom = Math.max(...rects.map((rect) => rect.bottom));
+	const right = Math.max(...rects.map((rect) => rect.right));
+	return { top, left, bottom, right, width: right - left, height: bottom - top };
+}
+
 function chooseFloatingSide(
 	anchorRect: ToolbarRect,
 	containerHeight: number,
@@ -352,22 +364,24 @@ export function computeToolbarPosition({
 	preferredSide = "top",
 	align = "center",
 }: ToolbarPositionOptions): ToolbarPositionResult {
-	const normalizedRects = normalizeAnchorRects(anchorRect, anchorRects);
-	const sideSelectionBounds =
-		normalizedRects.length > 1
-			? {
-				top: Math.min(...normalizedRects.map((rect) => rect.top)),
-				left: Math.min(...normalizedRects.map((rect) => rect.left)),
-				bottom: Math.max(...normalizedRects.map((rect) => rect.bottom)),
-				right: Math.max(...normalizedRects.map((rect) => rect.right)),
-				width: 0,
-				height: 0,
-			}
-			: anchorRect;
-	if (normalizedRects.length > 1) {
-		sideSelectionBounds.width = sideSelectionBounds.right - sideSelectionBounds.left;
-		sideSelectionBounds.height = sideSelectionBounds.bottom - sideSelectionBounds.top;
+	const allRects = normalizeAnchorRects(anchorRect, anchorRects);
+	// Selections spanning a page turn keep line rects in off-screen columns; anchoring to them
+	// would pin the toolbar to the viewport edge, pointing at nothing.
+	const onScreenRects = allRects.filter((rect) =>
+		intersectsContainer(rect, containerWidth, containerHeight)
+	);
+	if (mobile && onScreenRects.length === 0) {
+		return createDockedPosition(
+			clamp((containerWidth - toolbarWidth) / 2, edgeMargin, containerWidth - edgeMargin - toolbarWidth),
+			anchorRect
+		);
 	}
+	const clipped = onScreenRects.length > 0 && onScreenRects.length < allRects.length;
+	const normalizedRects = clipped ? onScreenRects : allRects;
+	// The caller's anchor point is derived from the unclipped bounds.
+	const effectiveAnchorPoint = clipped ? undefined : anchorPoint;
+	const sideSelectionBounds =
+		normalizedRects.length > 1 || clipped ? unionRects(normalizedRects) : anchorRect;
 	const nativeMenuSide = mobile
 		? estimateNativeSelectionMenuSide(sideSelectionBounds, containerHeight, edgeMargin)
 		: null;
@@ -386,8 +400,8 @@ export function computeToolbarPosition({
 			insetBottom,
 			resolvedPreferredSide
 		);
-	const activeAnchorRect = chooseAnchorRectForSide(normalizedRects, side, anchorPoint);
-	const anchorX = getAnchorX(activeAnchorRect, anchorPoint, align);
+	const activeAnchorRect = chooseAnchorRectForSide(normalizedRects, side, effectiveAnchorPoint);
+	const anchorX = getAnchorX(activeAnchorRect, effectiveAnchorPoint, align);
 	const minLeft = edgeMargin + Math.max(0, leadingOverflow);
 	const maxLeft = containerWidth - edgeMargin - toolbarWidth;
 	const idealLeft = align === "center"

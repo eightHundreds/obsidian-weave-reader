@@ -37,15 +37,12 @@ Optional: legacy draft files under `flat-locales/ja-JP.json` may be consulted by
 
 Tutorial content lives in `src/components/epub/tutorial-locales/*.json` (`zh-CN`, `en-US`, `ja-JP`, `ko-KR`, `ru-RU`). Tab labels are in `epub-tutorial-content.ts`. The tutorial modal follows `currentLanguage` automatically.
 
-To refresh draft `ja` / `ko` / `ru` bodies from English: `pnpm run i18n:draft:generate-tutorial` (Argos MT — review before shipping). Prefer hand-editing the JSON files for production copy.
+Hand-edit the tutorial JSON files for production copy.
 
 ## Scripts
 
 | Script | Purpose |
 |--------|---------|
 | `i18n:export-keys` | Export English key template |
-| `i18n:export-zh-snapshot` | Export zh-CN flat snapshot (overlay QA) |
-| `i18n:build-overlays` | Build curated `overlays/*.json` |
+| `i18n:build-overlays` | Export the zh-CN snapshot, then build curated `overlays/*.json` |
 | `i18n:validate` | Policy + tests for overlays |
-
-Do **not** use `i18n:complete-ko` / `i18n:generate-locales` for production catalogs; they produce draft MT only.

@@ -10,6 +10,11 @@ import {
 	type SelectionToolbarItemId,
 	type SelectionToolbarSettings,
 } from "../../config/selection-toolbar-settings";
+import {
+	MAX_ZEN_FAB_ACTIONS,
+	createZenFabActionId,
+	normalizeZenFabActions,
+} from "../../config/zen-fab-actions";
 import { getEpubStorageService, normalizeEpubBookmarkFolderPath } from "../../services/epub";
 import { notifyExcerptSettingsChanged } from "../../services/epub/excerpt-settings-events";
 import { ensureDefaultBookNotesExportTemplates } from "../../services/epub/book-notes-export/install-templates";
@@ -288,6 +293,37 @@ export function createEpubBasicSettingsActions(deps: EpubBasicSettingsActionDeps
 					(_, providerIndex) => providerIndex !== index
 				),
 			});
+		},
+
+		async addZenFabAction(commandId: string): Promise<void> {
+			const current = normalizeZenFabActions(plugin.settings.zenFabActions);
+			const normalizedCommandId = commandId.trim();
+			if (!normalizedCommandId || current.length >= MAX_ZEN_FAB_ACTIONS) {
+				return;
+			}
+			plugin.settings.zenFabActions = [
+				...current,
+				{ id: createZenFabActionId(), commandId: normalizedCommandId },
+			];
+			await deps.save();
+		},
+
+		async updateZenFabActionCommand(id: string, commandId: string): Promise<void> {
+			const normalizedCommandId = commandId.trim();
+			if (!normalizedCommandId) {
+				return;
+			}
+			plugin.settings.zenFabActions = normalizeZenFabActions(plugin.settings.zenFabActions).map(
+				(action) => (action.id === id ? { ...action, commandId: normalizedCommandId } : action)
+			);
+			await deps.save();
+		},
+
+		async removeZenFabAction(id: string): Promise<void> {
+			plugin.settings.zenFabActions = normalizeZenFabActions(plugin.settings.zenFabActions).filter(
+				(action) => action.id !== id
+			);
+			await deps.save();
 		},
 	};
 }

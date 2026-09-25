@@ -1,4 +1,9 @@
-import { Setting, ToggleComponent } from "obsidian";
+import { Setting, ToggleComponent, setIcon } from "obsidian";
+import {
+	listObsidianCommands,
+	MAX_ZEN_FAB_ACTIONS,
+	obsidianCommandIcon,
+} from "../../config/zen-fab-actions";
 import { isBuiltinTranslationEnabled } from "../../config/selection-translation-settings";
 import { BUILTIN_WEB_TRANSLATION_PROVIDERS } from "../../config/web-translation-providers";
 import { getEpubBacklinkHighlightService } from "../../services/epub/epub-backlink-highlight-access";
@@ -35,6 +40,7 @@ function clearHosts(hosts: EpubBasicSettingsMountOptions["hosts"]): void {
 	hosts.selectionToolbar.replaceChildren();
 	hosts.selectionTranslation.replaceChildren();
 	hosts.diagnostics.replaceChildren();
+	hosts.zenFab.replaceChildren();
 }
 
 function renderCustomTranslationProvidersPanel(
@@ -185,6 +191,58 @@ export function mountEpubBasicSettings(options: EpubBasicSettingsMountOptions): 
 				await callbacks.updatePremiumPreview(value);
 			});
 		});
+
+	const zenCommands = listObsidianCommands(plugin.app);
+	const zenActions = snapshot.zenFabActions;
+	if (zenCommands.length === 0) {
+		new Setting(hosts.zenFab).setDesc(t("epub.settings.basic.zenFabNoCommands"));
+	} else {
+		for (const action of zenActions) {
+			const matchedCommand =
+				zenCommands.find((command) => command.id === action.commandId) ?? null;
+			const commandIcon = obsidianCommandIcon(matchedCommand);
+			const setting = new Setting(hosts.zenFab)
+				.setClass("epub-zen-fab-command-setting")
+				.setName(t("epub.settings.basic.zenFabActionCommand"));
+			if (commandIcon) {
+				const iconEl = setting.nameEl.createSpan({ cls: "epub-zen-fab-command-icon" });
+				setIcon(iconEl, commandIcon);
+				setting.nameEl.prepend(iconEl);
+			}
+			setting.addDropdown((dropdown) => {
+					const known = zenCommands.some((command) => command.id === action.commandId);
+					if (!known) {
+						dropdown.addOption(action.commandId, action.commandId);
+					}
+					for (const command of zenCommands) {
+						dropdown.addOption(command.id, command.name);
+					}
+					dropdown.setValue(action.commandId);
+					dropdown.onChange(async (value) => {
+						await callbacks.updateZenFabActionCommand(action.id, value);
+					});
+				})
+				.addExtraButton((button) => {
+					button
+						.setIcon("trash")
+						.setTooltip(t("epub.settings.basic.zenFabRemoveAction"))
+						.onClick(() => {
+							void callbacks.removeZenFabAction(action.id);
+						});
+				});
+		}
+
+		if (zenActions.length < MAX_ZEN_FAB_ACTIONS) {
+			new Setting(hosts.zenFab).addButton((button) => {
+				button
+					.setButtonText(t("epub.settings.basic.zenFabAddAction"))
+					.setCta()
+					.onClick(() => {
+						void callbacks.addZenFabAction(zenCommands[0]?.id ?? "");
+					});
+			});
+		}
+	}
 
 	new Setting(hosts.selectionToolbar)
 		.setName(t("epub.settings.basic.hideSelectionCreateCard"))

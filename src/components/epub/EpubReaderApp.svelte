@@ -98,6 +98,13 @@
 	} from '../../services/epub/EpubHighlightViewSnapshotService';
 	import { createEpubNavigationController } from './useEpubNavigation';
 	import { resolveReadingViewportLockTarget } from '../../utils/mobile-reading-viewport-lock';
+	import ZenFloatingButton from './ZenFloatingButton.svelte';
+	import {
+		executeObsidianCommand,
+		listObsidianCommands,
+		normalizeZenFabActions,
+		obsidianCommandIcon,
+	} from '../../config/zen-fab-actions';
 	import { domInstanceOf } from '../../utils/dom-instance-of';
 	import { shouldDismissToolbarOnPointerDown } from './toolbar-positioning';
 	import { buildEpubMarkdownLocateCandidates } from '../../services/ui/source-locate-candidates';
@@ -110,6 +117,7 @@
 	import { isEphemeralEditorHighlightSourcePath } from '../../services/epub/epub-highlight-source-path';
 	import type { EpubHostCreateCardInput } from '../../services/epub';
 	import '../../styles/epub/epub-reader.css';
+	import '../../styles/epub/epub-zen-mode.css';
 
 	interface Props {
 		app: App;
@@ -283,6 +291,8 @@
 	} | null>(null);
 	const PARAGRAPH_MODE_PERSIST_DEBOUNCE_MS = 1400;
 	const PARAGRAPH_MODE_REACTIVE_REFRESH_COOLDOWN_MS = 450;
+	let zenMode = $state(false);
+	let zenFabOpen = $state(false);
 	let rootEl = $state<HTMLDivElement | null>(null);
 	let viewportEl = $state<HTMLDivElement | null>(null);
 	let readingViewportLockEl = $derived(resolveReadingViewportLockTarget(rootEl));
@@ -410,6 +420,46 @@
 
 	function hasParagraphModeCapability(): boolean {
 		return canUseEpubParagraphMode(app);
+	}
+
+	function enterZenMode(): void {
+		zenMode = true;
+		zenFabOpen = false;
+		document.body.classList.add('weave-epub-zen-mode');
+	}
+
+	function exitZenMode(): void {
+		zenMode = false;
+		zenFabOpen = false;
+		document.body.classList.remove('weave-epub-zen-mode');
+	}
+
+	function resolveZenFabCustomActions() {
+		const host = resolveEpubHost(app) as { settings?: { zenFabActions?: unknown } } | null;
+		const configured = normalizeZenFabActions(host?.settings?.zenFabActions);
+		const commands = new Map(listObsidianCommands(app).map((command) => [command.id, command]));
+		return configured.flatMap((action) => {
+			const command = commands.get(action.commandId);
+			if (!command) {
+				return [];
+			}
+			return [{
+				icon: obsidianCommandIcon(command) ?? 'circle',
+				label: command.name,
+				action: () => {
+					executeObsidianCommand(app, action.commandId);
+					zenFabOpen = false;
+				},
+			}];
+		});
+	}
+
+	function toggleZenMode(): void {
+		if (zenMode) {
+			exitZenMode();
+		} else {
+			enterZenMode();
+		}
 	}
 
 	function hasExcerptNotesCapability(): boolean {
@@ -5332,6 +5382,7 @@
 			setScreenshotSaveMode: (saveAsImage: boolean) => { screenshotSaveAsImage = saveAsImage; },
 			navigateToCfi,
 			toggleTutorial,
+			toggleZenMode,
 			addBookmark,
 			canUseReadingProgress: hasReadingProgressCapability,
 			canUseReadingReference: hasReadingReferenceCapability,
@@ -5964,6 +6015,15 @@
 					statusDetail={getBottomNavStatusDetail()}
 				/>
 			</div>
+		{/if}
+
+		{#if zenMode && isMobileReader()}
+			<ZenFloatingButton
+				bind:isOpen={zenFabOpen}
+				onToggle={() => {}}
+				onExitZen={exitZenMode}
+				resolveCustomActions={resolveZenFabCustomActions}
+			/>
 		{/if}
 	{/if}
 </div>

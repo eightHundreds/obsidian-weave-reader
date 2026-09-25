@@ -188,6 +188,45 @@ describe('toolbar-positioning', () => {
 		expect(result.arrowOffset).toBe(0);
 	});
 
+	it('anchors cross-page selections to the lines still on screen', () => {
+		const result = computeToolbarPosition({
+			anchorRect: { top: 40, left: -360, bottom: 700, right: 340, width: 700, height: 660 },
+			anchorRects: [
+				{ top: 400, left: -340, bottom: 424, right: -20, width: 320, height: 24 },
+				{ top: 676, left: -340, bottom: 700, right: -20, width: 320, height: 24 },
+				{ top: 200, left: 20, bottom: 224, right: 340, width: 320, height: 24 },
+				{ top: 248, left: 20, bottom: 272, right: 200, width: 180, height: 24 },
+			],
+			anchorPoint: { x: -10, y: 370 },
+			containerWidth: 360,
+			containerHeight: 720,
+			toolbarWidth: 220,
+			toolbarHeight: 72,
+			mobile: true,
+		});
+
+		expect(result.mode).toBe('floating');
+		expect(result.isBelowAnchor).toBe(true);
+		expect(result.anchorRect).toEqual({ top: 248, left: 20, bottom: 272, right: 200, width: 180, height: 24 });
+		expect(result.top).toBe(284);
+		expect(result.left).toBe(12);
+		expect(result.arrowOffset).toBe(-12);
+	});
+
+	it('docks mobile toolbars when the whole selection is on another page', () => {
+		const result = computeToolbarPosition({
+			anchorRect: { top: 400, left: -340, bottom: 424, right: -20, width: 320, height: 24 },
+			containerWidth: 360,
+			containerHeight: 720,
+			toolbarWidth: 220,
+			toolbarHeight: 72,
+			mobile: true,
+		});
+
+		expect(result.mode).toBe('docked');
+		expect(result.left).toBe(70);
+	});
+
 	it('keeps floating toolbars above reserved bottom insets', () => {
 		const result = computeToolbarPosition({
 			anchorRect: { top: 220, left: 110, bottom: 244, right: 174, width: 64, height: 24 },

@@ -1,4 +1,4 @@
-import type { App } from "obsidian";
+import { Platform, type App } from "obsidian";
 import type {
 	EpubBookFootnotesDraft,
 	EpubChapterReadingPointDraft,
@@ -138,6 +138,11 @@ import {
 	resolvedRangeCoversHighlightText,
 } from "./highlight/highlight-identity";
 import { EpubLinkService } from "./EpubLinkService";
+import {
+	SelectionEdgePageTurnTracker,
+	resolveSelectionEdgeTurnStep,
+	type SelectionEdgeTurnDirection,
+} from "./selection-edge-page-turn";
 
 function logFootnoteDiag(message: string): void {
 	logger.debugWithTag("FootnoteDiag", message);
@@ -160,7 +165,13 @@ type FoliateRenderer = HTMLElement & {
 	getContents?: () => Array<{ index?: number; doc?: Document | null }>;
 	flow?: string;
 	viewSize?: number;
+	start?: number;
 	end?: number;
+	size?: number;
+	page?: number;
+	pages?: number;
+	next?: (distance?: number) => Promise<unknown>;
+	prev?: (distance?: number) => Promise<unknown>;
 };
 
 type FoliateViewElement = HTMLElement & {
@@ -5210,7 +5221,16 @@ export class FoliateReaderService implements EpubReaderEngine {
 			});
 		};
 
-		const onSelectionChange = () => scheduleEmit();
+		const edgeTracker = Platform.isMobile
+			? new SelectionEdgePageTurnTracker(doc, {
+					getVisibleRange: () => this.getLastVisibleRange(doc),
+					turn: (direction) => this.turnPageForSelectionEdge(doc, direction),
+				})
+			: null;
+		const onSelectionChange = () => {
+			scheduleEmit();
+			edgeTracker?.handleSelectionChange();
+		};
 		const onMouseUp = (event: MouseEvent) => {
 			scheduleEmit();
 			this.bridgeHostSelectionMouseUp(doc, event);
@@ -5227,12 +5247,59 @@ export class FoliateReaderService implements EpubReaderEngine {
 			if (pendingFrame) {
 				window.cancelAnimationFrame(pendingFrame);
 			}
+			edgeTracker?.dispose();
 			doc.removeEventListener("selectionchange", onSelectionChange);
 			doc.removeEventListener("mouseup", onMouseUp);
 			doc.removeEventListener("touchend", onTouchEnd);
 			doc.removeEventListener("keyup", onKeyUp);
 		};
 		this.documentSelectionCleanups.set(doc, cleanup);
+	}
+
+	private getLastVisibleRange(doc: Document): Range | null {
+		const range = (this.foliateView?.lastLocation as { range?: Range | null } | undefined)?.range;
+		if (
+			typeof range?.getClientRects !== "function" ||
+			range.startContainer?.ownerDocument !== doc
+		) {
+			return null;
+		}
+		return range;
+	}
+
+	private async turnPageForSelectionEdge(
+		doc: Document,
+		direction: SelectionEdgeTurnDirection
+	): Promise<void> {
+		const renderer = this.foliateView?.renderer as FoliateRenderer | undefined;
+		if (!renderer || renderer.localName !== "foliate-paginator") {
+			return;
+		}
+		const step = resolveSelectionEdgeTurnStep(
+			{
+				scrolled: this.currentFlowMode === "scrolled",
+				page: renderer.page,
+				pages: renderer.pages,
+				start: renderer.start,
+				end: renderer.end,
+				size: renderer.size,
+				viewSize: renderer.viewSize,
+			},
+			direction
+		);
+		if (!step) {
+			return;
+		}
+		// Bypass nextPage()/prevPage(): they clear the selection the user is still extending.
+		await this.enqueueNavigation(async () => {
+			await (direction === "next" ? renderer.next : renderer.prev)?.call(
+				renderer,
+				step.distance
+			);
+		}, "selectionEdgeTurn");
+		// The selection itself is unchanged, so the CFI dedupe would skip repositioning the toolbar.
+		this.lastSelectionByDocument.delete(doc);
+		this.emitSelectionChangeIfNeeded(doc);
 	}
 
 	private attachWheelListeners(doc: Document): void {

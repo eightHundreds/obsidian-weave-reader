@@ -6,6 +6,7 @@ import type {
 	SelectionToolbarItemId,
 	SelectionToolbarSettings,
 } from "../../config/selection-toolbar-settings";
+import type { ZenFabActionSetting } from "../../config/zen-fab-actions";
 import type { InterfaceLanguagePreference } from "../../utils/i18n";
 import type StandaloneEpubPlugin from "../../main";
 
@@ -25,6 +26,7 @@ export interface EpubBasicSettingsHosts {
 	selectionToolbar: HTMLElement;
 	selectionTranslation: HTMLElement;
 	diagnostics: HTMLElement;
+	zenFab: HTMLElement;
 }
 
 export interface EpubBasicSettingsSnapshot {
@@ -40,6 +42,7 @@ export interface EpubBasicSettingsSnapshot {
 	selectionToolbarSettings: SelectionToolbarSettings;
 	selectionTranslationSettings: SelectionTranslationSettings;
 	customTranslationProviderDrafts: CustomWebTranslationProvider[];
+	zenFabActions: ZenFabActionSetting[];
 }
 
 export interface EpubBasicSettingsCallbacks {
@@ -70,6 +73,9 @@ export interface EpubBasicSettingsCallbacks {
 	) => Promise<void>;
 	updateSourceNavigationOpenInNewTab: (enabled: boolean) => Promise<void>;
 	updateDebugMode: (enabled: boolean) => Promise<void>;
+	addZenFabAction: (commandId: string) => Promise<void>;
+	updateZenFabActionCommand: (id: string, commandId: string) => Promise<void>;
+	removeZenFabAction: (id: string) => Promise<void>;
 }
 
 export interface EpubBasicSettingsMountOptions {

@@ -140,6 +140,7 @@ export class EpubView extends ItemView {
 		updateExcerptSettings?: (patch: Partial<EpubExcerptSettings>) => Promise<void>;
 		prevPage?: () => void | Promise<void>;
 		nextPage?: () => void | Promise<void>;
+		toggleZenMode?: () => void;
 	} = {};
 
 	constructor(leaf: WorkspaceLeaf, plugin: EpubViewHost) {
@@ -505,6 +506,10 @@ export class EpubView extends ItemView {
 
 		if (this.filePath) {
 			this.appendExportPaneMenu(menu);
+		}
+
+		if (Platform.isMobile) {
+			this.appendZenModePaneMenu(menu);
 		}
 
 		this.appendHelpPaneMenu(menu);
@@ -966,6 +971,19 @@ export class EpubView extends ItemView {
 				});
 			});
 		}
+	}
+
+	private appendZenModePaneMenu(menu: Menu): void {
+		if (!this.actionHandlers.toggleZenMode) {
+			return;
+		}
+		menu.addItem((item) => {
+			item.setTitle(this.t("views.epubView.menu.zenMode"));
+			item.setIcon("maximize-2");
+			item.onClick(() => {
+				this.actionHandlers.toggleZenMode?.();
+			});
+		});
 	}
 
 	private appendHelpPaneMenu(menu: Menu): void {

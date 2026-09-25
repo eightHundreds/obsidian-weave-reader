@@ -81,6 +81,24 @@
   min-width: 0;
 }
 
+.epub-native-settings-host .epub-zen-fab-command-setting .setting-item-name {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.epub-native-settings-host .epub-zen-fab-command-icon {
+	display: inline-flex;
+	width: 18px;
+	height: 18px;
+	flex: 0 0 auto;
+}
+
+.epub-native-settings-host .epub-zen-fab-command-icon svg {
+	width: 18px;
+	height: 18px;
+}
+
 .epub-native-settings-host .setting-item-name {
   font-size: var(--epub-settings-font-size-label);
   font-weight: 600;
