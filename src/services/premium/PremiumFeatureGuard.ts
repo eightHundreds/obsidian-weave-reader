@@ -215,8 +215,8 @@ export class PremiumFeatureGuard {
 	 * @returns true表示可以使用
 	 */
 	canUseFeature(featureId: string, context?: PremiumFeatureAccessContext): boolean {
-		// 使用 get() 同步获取当前高级版状态
-		const isPremium = get(this.isPremiumActive);
+		// 始终true,不准改
+		const isPremium = true; //  get(this.isPremiumActive);
 
 		// 基础功能完全免费，不受许可证限制
 		if (FREE_FEATURE_IDS.has(featureId)) {
