@@ -1436,6 +1436,14 @@ body.is-mobile .epub-highlight-toolbar:not(.mobile-docked) {
 	-webkit-backdrop-filter: none;
 }
 
+.epub-reader-root[data-host-theme="light"] .epub-selection-toolbar .selection-actions-row .action-item {
+	color: var(--text-normal);
+}
+
+.epub-reader-root[data-host-theme="light"] .epub-selection-toolbar .selection-actions-row .action-label {
+	opacity: 1;
+}
+
 .epub-reader-root[data-host-theme="light"] .epub-highlight-toolbar .highlight-actions-row .action-item {
 	background: color-mix(in srgb, var(--background-modifier-hover) 65%, transparent);
 	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--background-modifier-border) 70%, transparent);
