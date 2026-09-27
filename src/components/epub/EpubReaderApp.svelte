@@ -3286,6 +3286,10 @@
 		color?: string,
 		style?: EpubHighlightStyle
 	) {
+		if (!autoInsert) {
+			void copyTextToClipboard(buildNoteContent(text, cfiRange, color, style));
+			return;
+		}
 		outputNote(text, cfiRange, color, style);
 	}
 
